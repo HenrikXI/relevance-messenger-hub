@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { 
   ResizablePanelGroup, 
   ResizablePanel, 
@@ -9,6 +9,12 @@ import ProjectSidebar from "@/components/ProjectSidebar";
 import ChatArea from "@/components/ChatArea";
 
 const Index = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+  
   return (
     <div className="h-screen w-full flex flex-col bg-background">
       <header className="border-b bg-card/50 backdrop-blur-lg sticky top-0 z-10">
@@ -27,8 +33,16 @@ const Index = () => {
       
       <main className="flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
-          <ResizablePanel defaultSize={25} minSize={20} maxSize={40} className="border-r">
-            <ProjectSidebar />
+          <ResizablePanel 
+            defaultSize={25} 
+            minSize={sidebarCollapsed ? 4 : 20} 
+            maxSize={sidebarCollapsed ? 4 : 40} 
+            className="border-r"
+          >
+            <ProjectSidebar 
+              collapsed={sidebarCollapsed} 
+              onToggleCollapse={toggleSidebar} 
+            />
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={75}>
