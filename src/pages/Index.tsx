@@ -1,7 +1,6 @@
 
 import React from "react";
-import ChatInterface from "@/components/ChatInterface";
-import { jsPDF } from "jspdf";
+import SimpleChatInterface from "@/components/SimpleChatInterface";
 
 const Index = () => {
   return (
@@ -21,7 +20,7 @@ const Index = () => {
       </header>
       
       <main className="flex-1 py-6">
-        <ChatInterface />
+        <SimpleChatInterface />
       </main>
       
       <footer className="border-t py-4 bg-card/50 backdrop-blur-lg">
