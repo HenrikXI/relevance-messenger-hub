@@ -1,11 +1,12 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Mic, MicOff, Send, FileText } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { toast } from "sonner";
 import MetricsInput from "./MetricsInput";
 import { Metric } from "../types";
 
@@ -32,6 +33,39 @@ const ChatArea: React.FC = () => {
   const [showMetrics, setShowMetrics] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'de-DE'; // Set language to German
+      
+      recognitionRef.current.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('');
+        
+        setInputValue(transcript);
+      };
+      
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        setIsRecording(false);
+        toast.error('Fehler bei der Spracherkennung: ' + event.error);
+      };
+    }
+    
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
@@ -62,10 +96,21 @@ const ChatArea: React.FC = () => {
   };
 
   const handleToggleRecording = () => {
+    if (!recognitionRef.current) {
+      toast.error('Spracherkennung wird von Ihrem Browser nicht unterstützt.');
+      return;
+    }
+
     if (isRecording) {
-      // Simulate speech-to-text conversion
-      const speechText = "Dies ist ein Beispieltext aus der Spracherkennung.";
-      setInputValue(speechText);
+      recognitionRef.current.stop();
+    } else {
+      try {
+        recognitionRef.current.start();
+        toast.success('Spracherkennung aktiviert. Sprechen Sie bitte.');
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        toast.error('Fehler beim Starten der Spracherkennung.');
+      }
     }
     setIsRecording(!isRecording);
   };
@@ -162,6 +207,7 @@ const ChatArea: React.FC = () => {
           variant={isRecording ? "destructive" : "outline"}
           onClick={handleToggleRecording}
           className="flex-shrink-0"
+          title={isRecording ? "Spracherkennung stoppen" : "Spracherkennung starten"}
         >
           {isRecording ? (
             <MicOff className="h-5 w-5" />
@@ -183,6 +229,7 @@ const ChatArea: React.FC = () => {
           onClick={handleSendMessage} 
           disabled={!inputValue.trim()} 
           className="flex-shrink-0"
+          title="Nachricht senden"
         >
           <Send className="h-5 w-5" />
         </Button>
