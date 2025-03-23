@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Message, Project, Metric, SearchResult } from "../types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useToast } from "@/hooks/use-toast";
-import { FilePdf, Loader2, SendHorizonal } from "lucide-react";
+import { FileText, Loader2, SendHorizonal } from "lucide-react";
 import { relevanceAgent } from "../utils/relevanceAgent";
 import { exportToPDF } from "../utils/pdfExport";
 import ProjectSelector from "./ProjectSelector";
@@ -320,7 +319,7 @@ const ChatInterface: React.FC = () => {
                 {isExporting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <FilePdf className="h-4 w-4" />
+                  <FileText className="h-4 w-4" />
                 )}
                 {isExporting ? "Exportiere..." : "Als PDF exportieren"}
               </Button>

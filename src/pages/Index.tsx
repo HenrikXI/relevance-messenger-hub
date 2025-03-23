@@ -3,9 +3,6 @@ import React from "react";
 import ChatInterface from "@/components/ChatInterface";
 import { jsPDF } from "jspdf";
 
-// Add jsPDF dependency
-<lov-add-dependency>jspdf@latest</lov-add-dependency>
-
 const Index = () => {
   return (
     <div className="min-h-screen w-full flex flex-col bg-background">
