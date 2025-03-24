@@ -10,11 +10,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userRole: "user" | "admin";
 }
 
 // Schema für Benutzereinstellungen
@@ -30,8 +30,9 @@ const adminSettingsSchema = z.object({
   apiUrl: z.string().url("Gültige URL erforderlich"),
 });
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange, userRole }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => {
   const [activeTab, setActiveTab] = useState("user");
+  const { user } = useAuth();
 
   // Formular für Benutzereinstellungen
   const userForm = useForm<z.infer<typeof userSettingsSchema>>({
@@ -66,13 +67,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange, userR
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Einstellungen</DialogTitle>
+          <DialogTitle>HCS Messenger Hub - Einstellungen</DialogTitle>
         </DialogHeader>
         
         <Tabs defaultValue="user" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="user">Benutzer</TabsTrigger>
-            {userRole === "admin" && (
+            {user?.role === "admin" && (
               <TabsTrigger value="admin">Admin</TabsTrigger>
             )}
           </TabsList>
@@ -138,7 +139,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange, userR
             </Form>
           </TabsContent>
           
-          {userRole === "admin" && (
+          {user?.role === "admin" && (
             <TabsContent value="admin" className="space-y-4 mt-4">
               <Form {...adminForm}>
                 <form onSubmit={adminForm.handleSubmit(onSaveAdminSettings)} className="space-y-4">

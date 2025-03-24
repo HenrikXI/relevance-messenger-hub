@@ -9,11 +9,14 @@ import ProjectSidebar from "@/components/ProjectSidebar";
 import ChatArea from "@/components/ChatArea";
 import SettingsButton from "@/components/SettingsButton";
 import SettingsModal from "@/components/SettingsModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [userRole] = useState<"user" | "admin">("admin"); // In einer echten App würde dies aus einem Auth-System kommen
+  const { user, signOut } = useAuth();
   
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -27,12 +30,15 @@ const Index = () => {
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
               <div className="h-3 w-3 rounded-full bg-primary animate-pulse"></div>
             </div>
-            <h1 className="text-xl font-medium">Relevance Messenger Hub</h1>
+            <h1 className="text-xl font-medium">HCS Messenger Hub</h1>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-sm text-muted-foreground">
-              Intelligente Kommunikation
+              {user?.email} ({user?.role})
             </div>
+            <Button variant="ghost" size="icon" onClick={signOut} title="Abmelden">
+              <LogOut className="h-5 w-5" />
+            </Button>
             <SettingsButton onClick={() => setShowSettings(true)} />
           </div>
         </div>
@@ -61,7 +67,7 @@ const Index = () => {
       <footer className="border-t py-4 bg-card/50 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-2 text-sm text-muted-foreground">
-            <div>© {new Date().getFullYear()} Relevance Messenger Hub</div>
+            <div>© {new Date().getFullYear()} HCS Messenger Hub</div>
             <div className="flex items-center gap-4">
               <span>Datenschutz</span>
               <span>Impressum</span>
@@ -74,7 +80,6 @@ const Index = () => {
       <SettingsModal 
         open={showSettings} 
         onOpenChange={setShowSettings} 
-        userRole={userRole} 
       />
     </div>
   );
