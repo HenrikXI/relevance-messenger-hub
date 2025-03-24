@@ -7,9 +7,13 @@ import {
 } from "@/components/ui/resizable";
 import ProjectSidebar from "@/components/ProjectSidebar";
 import ChatArea from "@/components/ChatArea";
+import SettingsButton from "@/components/SettingsButton";
+import SettingsModal from "@/components/SettingsModal";
 
 const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [userRole] = useState<"user" | "admin">("admin"); // In einer echten App würde dies aus einem Auth-System kommen
   
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -25,8 +29,11 @@ const Index = () => {
             </div>
             <h1 className="text-xl font-medium">Relevance Messenger Hub</h1>
           </div>
-          <div className="text-sm text-muted-foreground">
-            Intelligente Kommunikation
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-muted-foreground">
+              Intelligente Kommunikation
+            </div>
+            <SettingsButton onClick={() => setShowSettings(true)} />
           </div>
         </div>
       </header>
@@ -63,6 +70,12 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      <SettingsModal 
+        open={showSettings} 
+        onOpenChange={setShowSettings} 
+        userRole={userRole} 
+      />
     </div>
   );
 };
