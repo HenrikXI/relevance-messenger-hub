@@ -1,16 +1,16 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface SettingsModalProps {
   open: boolean;
@@ -30,18 +30,36 @@ const adminSettingsSchema = z.object({
   apiUrl: z.string().url("Gültige URL erforderlich"),
 });
 
+// Typ für die Benutzereinstellungen
+type UserSettings = z.infer<typeof userSettingsSchema>;
+
 const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => {
   const [activeTab, setActiveTab] = useState("user");
   const { user } = useAuth();
 
-  // Formular für Benutzereinstellungen
-  const userForm = useForm<z.infer<typeof userSettingsSchema>>({
-    resolver: zodResolver(userSettingsSchema),
-    defaultValues: {
+  // Laden der gespeicherten Einstellungen aus localStorage
+  const loadSavedSettings = (): UserSettings => {
+    const savedSettings = localStorage.getItem("hcs-user-settings");
+    if (savedSettings) {
+      try {
+        return JSON.parse(savedSettings);
+      } catch (error) {
+        console.error("Fehler beim Laden der Einstellungen:", error);
+      }
+    }
+    
+    // Standardwerte, falls keine gespeicherten Einstellungen vorhanden sind
+    return {
       displayName: "Max Mustermann",
       language: "de-DE",
       theme: "system",
-    },
+    };
+  };
+
+  // Formular für Benutzereinstellungen
+  const userForm = useForm<UserSettings>({
+    resolver: zodResolver(userSettingsSchema),
+    defaultValues: loadSavedSettings(),
   });
 
   // Formular für Admin-Einstellungen
@@ -53,7 +71,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
     },
   });
 
-  const onSaveUserSettings = (data: z.infer<typeof userSettingsSchema>) => {
+  // Einstellungen beim Speichern im localStorage ablegen
+  const onSaveUserSettings = (data: UserSettings) => {
+    localStorage.setItem("hcs-user-settings", JSON.stringify(data));
     console.log("Benutzereinstellungen gespeichert:", data);
     toast.success("Benutzereinstellungen wurden gespeichert");
   };
@@ -101,14 +121,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
                     <FormItem>
                       <FormLabel>Sprache</FormLabel>
                       <FormControl>
-                        <select
-                          {...field}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <option value="de-DE">Deutsch</option>
-                          <option value="en-US">Englisch</option>
-                          <option value="fr-FR">Französisch</option>
-                        </select>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sprache wählen" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="de-DE">Deutsch</SelectItem>
+                            <SelectItem value="en-US">Englisch</SelectItem>
+                            <SelectItem value="fr-FR">Französisch</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                     </FormItem>
                   )}
@@ -121,14 +143,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
                     <FormItem>
                       <FormLabel>Theme</FormLabel>
                       <FormControl>
-                        <select
-                          {...field}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <option value="light">Hell</option>
-                          <option value="dark">Dunkel</option>
-                          <option value="system">System</option>
-                        </select>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Theme wählen" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="light">Hell</SelectItem>
+                            <SelectItem value="dark">Dunkel</SelectItem>
+                            <SelectItem value="system">System</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                     </FormItem>
                   )}
