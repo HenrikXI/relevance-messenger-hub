@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,25 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { FileText, Search, Plus, MessageSquare } from "lucide-react";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { FileText, Search, Plus, MessageSquare, Trash2 } from "lucide-react";
 import { jsPDF } from "jspdf";
+import { toast } from "sonner";
 
 // Hidden Relevance Agent System: Interne Daten & Logik sind gekapselt
 const relevanceAgentSystem = (() => {
@@ -37,25 +54,77 @@ const relevanceAgentSystem = (() => {
 })();
 
 interface Message {
+  id: string;
   sender: "user" | "agent";
   text: string;
+  timestamp: Date;
+  projectName: string;
 }
 
 const SimpleChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
-    { sender: "agent", text: "Willkommen! Bitte erstellen Sie ein Projekt und geben Sie Ihre Anfrage ein." },
+    { 
+      id: "welcome",
+      sender: "agent", 
+      text: "Willkommen! Bitte erstellen Sie ein Projekt und geben Sie Ihre Anfrage ein.",
+      timestamp: new Date(),
+      projectName: ""
+    },
   ]);
   const [input, setInput] = useState("");
   const [projects, setProjects] = useState<string[]>([]); // Keine vorgewählten Projekte
   const [selectedProject, setSelectedProject] = useState("");
   const [projectNameInput, setProjectNameInput] = useState(""); // Eingabefeld für neuen Projektnamen
-  const [projectMetrics, setProjectMetrics] = useState<Record<string, string>>({});
+  const [projectMetrics, setProjectMetrics] = useState<Record<string, Record<string, string>>>({});
   const [history, setHistory] = useState<Message[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Message[]>([]);
   const [metricKey, setMetricKey] = useState("");
   const [metricValue, setMetricValue] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const [showDeleteProjectDialog, setShowDeleteProjectDialog] = useState(false);
+  const [advancedSearch, setAdvancedSearch] = useState(false);
+  const [searchByProject, setSearchByProject] = useState("");
+
+  // Laden der Daten aus localStorage beim Start
+  useEffect(() => {
+    const savedProjects = localStorage.getItem("projects");
+    if (savedProjects) {
+      setProjects(JSON.parse(savedProjects));
+    }
+
+    const savedMessages = localStorage.getItem("messages");
+    if (savedMessages) {
+      const parsedMessages = JSON.parse(savedMessages);
+      // Konvertieren der String-Timestamps zurück in Date-Objekte
+      const messagesWithDates = parsedMessages.map((msg: any) => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp)
+      }));
+      setMessages(messagesWithDates);
+      setHistory(messagesWithDates);
+    }
+
+    const savedMetrics = localStorage.getItem("projectMetrics");
+    if (savedMetrics) {
+      setProjectMetrics(JSON.parse(savedMetrics));
+    }
+  }, []);
+
+  // Speichern der Daten in localStorage bei Änderungen
+  useEffect(() => {
+    if (projects.length > 0) {
+      localStorage.setItem("projects", JSON.stringify(projects));
+    }
+    
+    if (messages.length > 0) {
+      localStorage.setItem("messages", JSON.stringify(messages));
+    }
+    
+    if (Object.keys(projectMetrics).length > 0) {
+      localStorage.setItem("projectMetrics", JSON.stringify(projectMetrics));
+    }
+  }, [projects, messages, projectMetrics]);
 
   // Funktion: Neues Projekt erstellen
   const handleCreateProject = () => {
@@ -64,16 +133,60 @@ const SimpleChatInterface: React.FC = () => {
     // Optional: Prüfen, ob das Projekt bereits existiert
     if (!projects.includes(newProject)) {
       setProjects((prev) => [...prev, newProject]);
+      // Initialisieren der Kennzahlen für das neue Projekt
+      setProjectMetrics(prev => ({
+        ...prev,
+        [newProject]: {}
+      }));
+      toast.success(`Projekt "${newProject}" erstellt`);
     }
     setSelectedProject(newProject);
     setProjectNameInput("");
+  };
+
+  // Funktion: Projekt löschen
+  const handleDeleteProject = () => {
+    if (!selectedProject) return;
+
+    // Aktualisiere die Projekte-Liste
+    setProjects(prev => prev.filter(project => project !== selectedProject));
+    
+    // Lösche zugehörige Kennzahlen
+    const newMetrics = { ...projectMetrics };
+    delete newMetrics[selectedProject];
+    setProjectMetrics(newMetrics);
+    
+    // Lösche zugehörige Nachrichten
+    setMessages(prev => prev.filter(msg => msg.projectName !== selectedProject || msg.id === "welcome"));
+    setHistory(prev => prev.filter(msg => msg.projectName !== selectedProject));
+    
+    // Reset Auswahl und Dialog
+    setSelectedProject("");
+    setShowDeleteProjectDialog(false);
+    
+    toast.success(`Projekt "${selectedProject}" wurde gelöscht`);
+  };
+
+  // Funktion: Nachricht löschen
+  const handleDeleteMessage = (messageId: string) => {
+    setMessages(prev => prev.filter(msg => msg.id !== messageId));
+    setHistory(prev => prev.filter(msg => msg.id !== messageId));
+    toast.success("Nachricht wurde gelöscht");
   };
 
   // Funktion: Chat-Nachricht senden
   const handleSend = () => {
     if (!input.trim() || !selectedProject) return;
     const currentInput = input;
-    const newMessage = { sender: "user" as const, text: `[${selectedProject}] ${currentInput}` };
+    
+    const newMessage = { 
+      id: `user_${Date.now()}`,
+      sender: "user" as const, 
+      text: currentInput,
+      timestamp: new Date(),
+      projectName: selectedProject
+    };
+    
     setMessages((prev) => [...prev, newMessage]);
     setHistory((prev) => [...prev, newMessage]);
     setInput("");
@@ -81,13 +194,20 @@ const SimpleChatInterface: React.FC = () => {
     // Generiere Agentenantwort im Hintergrund
     setTimeout(() => {
       const response = relevanceAgentSystem.getResponse(currentInput);
-      const responseMessage = { sender: "agent" as const, text: response };
+      const responseMessage = { 
+        id: `agent_${Date.now()}`,
+        sender: "agent" as const, 
+        text: response,
+        timestamp: new Date(),
+        projectName: selectedProject
+      };
+      
       setMessages((prev) => [...prev, responseMessage]);
       setHistory((prev) => [...prev, responseMessage]);
     }, 1000);
   };
 
-  // Funktion: Chat-Verlauf als PDF exportieren (ohne Logo)
+  // Funktion: Chat-Verlauf als PDF exportieren
   const handleExportPDF = () => {
     if (!selectedProject) return;
     
@@ -102,19 +222,30 @@ const SimpleChatInterface: React.FC = () => {
       let y = 30;
       doc.text("Projektkennzahlen:", 10, y);
       y += 10;
-      Object.entries(projectMetrics).forEach(([key, value]) => {
+      
+      const projectData = projectMetrics[selectedProject] || {};
+      Object.entries(projectData).forEach(([key, value]) => {
         doc.text(`${key}: ${value}`, 10, y);
         y += 10;
       });
       
-      messages.forEach((msg) => {
-        doc.text(`${msg.sender === "user" ? "User:" : "Agent:"} ${msg.text}`, 10, y);
+      const projectMessages = messages.filter(m => m.projectName === selectedProject);
+      projectMessages.forEach((msg) => {
+        // Formatierte Zeit hinzufügen
+        const timeStr = msg.timestamp.toLocaleTimeString('de-DE', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        doc.text(`[${timeStr}] ${msg.sender === "user" ? "User:" : "Agent:"} ${msg.text}`, 10, y);
         y += 10;
       });
       
       doc.save(`Projekt_${selectedProject}_Chatverlauf.pdf`);
+      toast.success("PDF erfolgreich exportiert");
     } catch (error) {
       console.error("Error exporting PDF:", error);
+      toast.error("Fehler beim Exportieren der PDF");
     } finally {
       setIsExporting(false);
     }
@@ -122,24 +253,44 @@ const SimpleChatInterface: React.FC = () => {
 
   // Funktion: Verlaufssuche
   const handleSearch = () => {
-    if (!searchQuery.trim()) {
+    if (!searchQuery.trim() && !searchByProject) {
       setSearchResults([]);
       return;
     }
     
-    const results = history.filter((msg) =>
-      msg.text.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    let results = [...history];
+    
+    // Nach Projekt filtern, wenn ausgewählt
+    if (searchByProject) {
+      results = results.filter(msg => msg.projectName === searchByProject);
+    }
+    
+    // Nach Suchbegriff filtern
+    if (searchQuery.trim()) {
+      results = results.filter(msg =>
+        msg.text.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
     setSearchResults(results);
+    
+    if (results.length === 0) {
+      toast.info("Keine Ergebnisse gefunden");
+    } else {
+      toast.success(`${results.length} Ergebnis(se) gefunden`);
+    }
   };
 
   // Funktion: Kennzahl hinzufügen
   const handleAddMetric = () => {
-    if (!metricKey.trim() || !metricValue.trim()) return;
+    if (!metricKey.trim() || !metricValue.trim() || !selectedProject) return;
     
     setProjectMetrics(prev => ({
       ...prev,
-      [metricKey]: metricValue
+      [selectedProject]: {
+        ...prev[selectedProject],
+        [metricKey]: metricValue
+      }
     }));
     
     setMetricKey("");
@@ -182,23 +333,57 @@ const SimpleChatInterface: React.FC = () => {
           {projects.length > 0 && (
             <div>
               <label className="block text-sm font-medium mb-1">Projekt auswählen:</label>
-              <Select 
-                value={selectedProject}
-                onValueChange={setSelectedProject}
-              >
-                <SelectTrigger className="glass-input">
-                  <SelectValue placeholder="Projekt auswählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map((project, index) => (
-                    <SelectItem key={index} value={project}>
-                      {project}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select 
+                  value={selectedProject}
+                  onValueChange={setSelectedProject}
+                >
+                  <SelectTrigger className="glass-input">
+                    <SelectValue placeholder="Projekt auswählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project, index) => (
+                      <SelectItem key={index} value={project}>
+                        {project}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {selectedProject && (
+                  <Button 
+                    variant="destructive"
+                    onClick={() => setShowDeleteProjectDialog(true)}
+                    title="Projekt löschen"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           )}
+
+          {/* Projekt löschen Dialog */}
+          <Dialog open={showDeleteProjectDialog} onOpenChange={setShowDeleteProjectDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Projekt löschen</DialogTitle>
+              </DialogHeader>
+              <p>
+                Möchten Sie das Projekt "{selectedProject}" wirklich löschen? 
+                Alle zugehörigen Nachrichten und Kennzahlen werden ebenfalls gelöscht.
+              </p>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowDeleteProjectDialog(false)}>
+                  Abbrechen
+                </Button>
+                <Button variant="destructive" onClick={handleDeleteProject}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Löschen
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Kennzahlen */}
           <div>
@@ -209,6 +394,7 @@ const SimpleChatInterface: React.FC = () => {
                 value={metricKey}
                 onChange={(e) => setMetricKey(e.target.value)}
                 className="glass-input"
+                disabled={!selectedProject}
               />
               <Input 
                 placeholder="Wert" 
@@ -216,10 +402,12 @@ const SimpleChatInterface: React.FC = () => {
                 onChange={(e) => setMetricValue(e.target.value)}
                 onKeyDown={(e) => handleKeyPress(e, handleAddMetric)}
                 className="glass-input"
+                disabled={!selectedProject}
               />
               <Button 
                 onClick={handleAddMetric}
                 variant="outline"
+                disabled={!selectedProject}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Kennzahl speichern
@@ -227,11 +415,11 @@ const SimpleChatInterface: React.FC = () => {
             </div>
             
             {/* Display metrics */}
-            {Object.keys(projectMetrics).length > 0 && (
+            {selectedProject && projectMetrics[selectedProject] && Object.keys(projectMetrics[selectedProject]).length > 0 && (
               <div className="mt-4 space-y-2">
                 <h4 className="text-sm font-medium">Gespeicherte Kennzahlen:</h4>
                 <div className="space-y-1">
-                  {Object.entries(projectMetrics).map(([key, value], index) => (
+                  {Object.entries(projectMetrics[selectedProject]).map(([key, value], index) => (
                     <div key={index} className="text-sm flex justify-between py-1 px-2 rounded bg-secondary/20">
                       <span>{key}:</span>
                       <span className="font-medium">{value}</span>
@@ -247,33 +435,101 @@ const SimpleChatInterface: React.FC = () => {
       {/* Search */}
       <Card className="p-4 glass-panel">
         <h3 className="text-lg font-medium mb-2">Verlaufssuche</h3>
-        <div className="flex gap-2">
-          <Input
-            placeholder="Suchbegriff eingeben..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => handleKeyPress(e, handleSearch)}
-            className="glass-input"
-          />
-          <Button onClick={handleSearch} variant="outline">
-            <Search className="h-4 w-4" />
-          </Button>
+        
+        <div className="space-y-3">
+          <div className="flex justify-between">
+            <Button
+              variant="ghost" 
+              onClick={() => setAdvancedSearch(!advancedSearch)}
+              className="text-xs"
+            >
+              {advancedSearch ? "Einfache Suche" : "Erweiterte Suche"}
+            </Button>
+          </div>
+          
+          <div className="flex flex-col gap-2">
+            {advancedSearch && (
+              <Select
+                value={searchByProject}
+                onValueChange={setSearchByProject}
+              >
+                <SelectTrigger className="glass-input">
+                  <SelectValue placeholder="Nach Projekt filtern (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Alle Projekte</SelectItem>
+                  {projects.map((project, index) => (
+                    <SelectItem key={index} value={project}>{project}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            
+            <div className="flex gap-2">
+              <Input
+                placeholder="Suchbegriff eingeben..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => handleKeyPress(e, handleSearch)}
+                className="glass-input"
+              />
+              <Button onClick={handleSearch} variant="outline">
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
         
         {searchResults.length > 0 && (
-          <div className="mt-4 space-y-2 max-h-40 overflow-y-auto p-2 border rounded-md">
-            {searchResults.map((result, index) => (
-              <div 
-                key={index} 
-                className={`p-2 rounded-md text-sm ${
-                  result.sender === "user" 
-                    ? "bg-primary/10 text-primary-foreground" 
-                    : "bg-secondary/10 text-secondary-foreground"
-                }`}
-              >
-                <span className="font-medium">{result.sender === "user" ? "User:" : "Agent:"}</span> {result.text}
-              </div>
-            ))}
+          <div className="mt-4">
+            <h4 className="text-sm font-medium mb-2">{searchResults.length} Ergebnis(se)</h4>
+            <div className="overflow-auto max-h-60 border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Projekt</TableHead>
+                    <TableHead>Absender</TableHead>
+                    <TableHead>Text</TableHead>
+                    <TableHead>Zeit</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {searchResults.map((result) => (
+                    <TableRow key={result.id}>
+                      <TableCell className="font-medium">
+                        {result.projectName || "System"}
+                      </TableCell>
+                      <TableCell>
+                        {result.sender === "user" ? "Sie" : "Agent"}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {result.text}
+                      </TableCell>
+                      <TableCell>
+                        {result.timestamp.toLocaleTimeString('de-DE', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: '2-digit'
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDeleteMessage(result.id)}
+                          title="Nachricht löschen"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         )}
       </Card>
@@ -287,22 +543,44 @@ const SimpleChatInterface: React.FC = () => {
         </div>
         
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((msg, index) => (
-            <div
-              key={index}
-              className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-            >
+          {messages
+            .filter(msg => !selectedProject || msg.projectName === selectedProject || msg.id === "welcome")
+            .map((msg, index) => (
               <div
-                className={`max-w-[80%] p-3 rounded-lg ${
-                  msg.sender === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary/10 text-secondary-foreground"
-                }`}
+                key={msg.id}
+                className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
               >
-                {msg.text}
+                <div className="group relative">
+                  <div
+                    className={`max-w-[80%] p-3 rounded-lg ${
+                      msg.sender === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary/10 text-secondary-foreground"
+                    }`}
+                  >
+                    {msg.text}
+                    <div className="text-xs opacity-60 mt-1">
+                      {msg.timestamp.toLocaleTimeString('de-DE', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </div>
+                  
+                  {msg.id !== "welcome" && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-0 right-0 -m-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleDeleteMessage(msg.id)}
+                      title="Nachricht löschen"
+                    >
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
 
         {/* Input area */}
@@ -328,7 +606,7 @@ const SimpleChatInterface: React.FC = () => {
           <div className="mt-2">
             <Button 
               onClick={handleExportPDF} 
-              disabled={!selectedProject || messages.length <= 1 || isExporting}
+              disabled={!selectedProject || messages.filter(m => m.projectName === selectedProject).length === 0 || isExporting}
               variant="outline"
               className="w-full"
             >
