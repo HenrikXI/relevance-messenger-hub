@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useRouter } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 type UserRole = "user" | "admin";
@@ -31,7 +31,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   // Initialize user from localStorage
   useEffect(() => {
@@ -77,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
     localStorage.setItem("hcs-user", JSON.stringify(userData));
     toast.success("Registrierung erfolgreich");
-    router.navigate("/");
+    navigate("/");
   };
 
   const signIn = async (email: string, password: string) => {
@@ -92,13 +92,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
     localStorage.setItem("hcs-user", JSON.stringify(userData));
     toast.success("Anmeldung erfolgreich");
-    router.navigate("/");
+    navigate("/");
   };
 
   const signOut = () => {
     setUser(null);
     localStorage.removeItem("hcs-user");
-    router.navigate("/signin");
+    navigate("/signin");
   };
 
   return (
