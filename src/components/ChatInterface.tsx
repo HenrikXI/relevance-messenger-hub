@@ -265,7 +265,7 @@ const ChatInterface: React.FC = () => {
   return (
     <div className="h-full flex flex-col gap-6 max-w-5xl mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row gap-6">
-        <Card className="flex-1 glass-panel">
+        <Card className="flex-1 glass-panel shadow-md">
           <CardHeader className="pb-2">
             <h2 className="text-lg font-medium">Projekt</h2>
           </CardHeader>
@@ -278,7 +278,7 @@ const ChatInterface: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="flex-1 glass-panel">
+        <Card className="flex-1 glass-panel shadow-md">
           <CardHeader className="pb-2">
             <h2 className="text-lg font-medium">Suche</h2>
           </CardHeader>
@@ -293,7 +293,7 @@ const ChatInterface: React.FC = () => {
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 flex-1 min-h-0">
-        <Card className="md:w-1/3 glass-panel">
+        <Card className="md:w-1/3 glass-panel shadow-md">
           <CardHeader className="pb-2">
             <h2 className="text-lg font-medium">Kennzahlen</h2>
           </CardHeader>
@@ -314,7 +314,7 @@ const ChatInterface: React.FC = () => {
               <Button
                 onClick={handleExportPDF}
                 disabled={!selectedProject || messages.length === 0 || isExporting}
-                className="w-full justify-start gap-2 bg-primary/10 hover:bg-primary/20 text-primary"
+                className="w-full justify-start gap-2 bg-primary/10 hover:bg-primary/20 text-primary shadow-sm"
               >
                 {isExporting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -327,7 +327,7 @@ const ChatInterface: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="flex-1 flex flex-col glass-panel">
+        <Card className="flex-1 flex flex-col glass-panel shadow-md">
           <CardHeader className="pb-2">
             <h2 className="text-lg font-medium">
               {selectedProject
@@ -336,7 +336,7 @@ const ChatInterface: React.FC = () => {
             </h2>
           </CardHeader>
           <CardContent className="flex-1 pb-0 flex flex-col">
-            <div className="flex-1 mb-4 min-h-0 border rounded-md">
+            <div className="flex-1 mb-4 min-h-0 border rounded-md chat-background">
               <MessageList messages={messages} />
             </div>
 
@@ -358,7 +358,7 @@ const ChatInterface: React.FC = () => {
                   onClick={handleSend}
                   disabled={!inputMessage.trim() || !selectedProject || isSending}
                   size="icon"
-                  className="shrink-0"
+                  className="button-accent-blue shadow-sm shrink-0"
                 >
                   {isSending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
