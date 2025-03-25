@@ -22,6 +22,7 @@ interface ContextActionProps {
   onCopy?: () => void;
   onShare?: () => void;
   onAddToProject?: () => void;
+  onClick?: () => void; // Added onClick prop to the interface
   isProject?: boolean;
   isChat?: boolean;
   isMessage?: boolean;
@@ -36,6 +37,7 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
   onCopy,
   onShare,
   onAddToProject,
+  onClick, // Add onClick to the parameter list
   isProject = false,
   isChat = false,
   isMessage = false,
@@ -45,7 +47,10 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className={className}>
+        <div 
+          className={className}
+          onClick={onClick} // Use the onClick prop here
+        >
           {children}
           
           {/* For messages, show icon buttons directly */}

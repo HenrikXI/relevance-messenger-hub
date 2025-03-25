@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -318,7 +317,6 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
                       >
                         <div 
                           className="flex-1 flex items-center gap-2"
-                          onClick={() => setSelectedProject(project)}
                         >
                           <Folder className="h-4 w-4 text-primary" />
                           <span className="text-sm font-medium">{project}</span>
