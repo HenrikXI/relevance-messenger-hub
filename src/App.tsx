@@ -29,8 +29,9 @@ const App = () => {
       try {
         const settings = JSON.parse(savedSettings);
         const preferredTheme = settings.theme;
-        // Theme will be set by ThemeProvider based on the "theme" attribute
+        // Theme will be set by ThemeProvider based on the "class" attribute
         document.documentElement.setAttribute("data-theme", preferredTheme);
+        document.documentElement.classList.add(preferredTheme);
       } catch (error) {
         console.error("Fehler beim Laden des Themes:", error);
       }

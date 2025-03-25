@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { 
   Table,
@@ -26,9 +25,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FileText, Search, Plus, MessageSquare, Trash2 } from "lucide-react";
+import { FileText, Search, Plus, MessageSquare, Trash2, Copy } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { toast } from "sonner";
+import { ContextMenuActions } from "./ContextMenuActions";
+import RenameDialog from "./RenameDialog";
 
 // Hidden Relevance Agent System: Interne Daten & Logik sind gekapselt
 const relevanceAgentSystem = (() => {
@@ -72,9 +73,9 @@ const SimpleChatInterface: React.FC = () => {
     },
   ]);
   const [input, setInput] = useState("");
-  const [projects, setProjects] = useState<string[]>([]); // Keine vorgewählten Projekte
+  const [projects, setProjects] = useState<string[]>([]);
   const [selectedProject, setSelectedProject] = useState("");
-  const [projectNameInput, setProjectNameInput] = useState(""); // Eingabefeld für neuen Projektnamen
+  const [projectNameInput, setProjectNameInput] = useState("");
   const [projectMetrics, setProjectMetrics] = useState<Record<string, Record<string, string>>>({});
   const [history, setHistory] = useState<Message[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -86,6 +87,9 @@ const SimpleChatInterface: React.FC = () => {
   const [advancedSearch, setAdvancedSearch] = useState(false);
   const [searchByProject, setSearchByProject] = useState("");
   const [showDeleteMessageDialog, setShowDeleteMessageDialog] = useState<string | null>(null);
+  const [renameProjectDialog, setRenameProjectDialog] = useState(false);
+  const [projectToRename, setProjectToRename] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Laden der Daten aus localStorage beim Start
   useEffect(() => {
@@ -124,6 +128,11 @@ const SimpleChatInterface: React.FC = () => {
     }
   }, []);
 
+  // Auto-scroll to the bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   // Speichern der Daten in localStorage bei Änderungen
   useEffect(() => {
     if (projects.length > 0) {
@@ -157,6 +166,50 @@ const SimpleChatInterface: React.FC = () => {
     setProjectNameInput("");
   };
 
+  // Funktion: Projekt umbenennen
+  const handleRenameProject = () => {
+    if (projectToRename === selectedProject) return;
+    if (!projectToRename.trim()) return;
+    
+    // Update project name in projects array
+    const updatedProjects = projects.map(project => 
+      project === selectedProject ? projectToRename : project
+    );
+    
+    // Update project name in metrics
+    const updatedMetrics = { ...projectMetrics };
+    if (updatedMetrics[selectedProject]) {
+      updatedMetrics[projectToRename] = updatedMetrics[selectedProject];
+      delete updatedMetrics[selectedProject];
+    }
+    
+    // Update project name in messages
+    const updatedMessages = messages.map(msg => ({
+      ...msg,
+      projectName: msg.projectName === selectedProject ? projectToRename : msg.projectName
+    }));
+    
+    const updatedHistory = history.map(msg => ({
+      ...msg,
+      projectName: msg.projectName === selectedProject ? projectToRename : msg.projectName
+    }));
+    
+    // Update state
+    setProjects(updatedProjects);
+    setProjectMetrics(updatedMetrics);
+    setMessages(updatedMessages);
+    setHistory(updatedHistory);
+    setSelectedProject(projectToRename);
+    
+    // Update localStorage
+    localStorage.setItem("projects", JSON.stringify(updatedProjects));
+    localStorage.setItem("projectMetrics", JSON.stringify(updatedMetrics));
+    localStorage.setItem("messages", JSON.stringify(updatedMessages));
+    
+    toast.success(`Projekt umbenannt zu "${projectToRename}"`);
+    setRenameProjectDialog(false);
+  };
+
   // Funktion: Projekt löschen
   const handleDeleteProject = () => {
     if (!selectedProject) return;
@@ -187,6 +240,13 @@ const SimpleChatInterface: React.FC = () => {
   // Funktion: Nachricht löschen mit Dialog
   const confirmDeleteMessage = (messageId: string) => {
     setShowDeleteMessageDialog(messageId);
+  };
+
+  // Funktion: Nachricht kopieren
+  const handleCopyMessage = (message: string) => {
+    navigator.clipboard.writeText(message)
+      .then(() => toast.success("Nachricht kopiert"))
+      .catch(() => toast.error("Fehler beim Kopieren"));
   };
 
   // Funktion: Nachricht löschen durchführen
@@ -345,6 +405,8 @@ const SimpleChatInterface: React.FC = () => {
     
     setMetricKey("");
     setMetricValue("");
+    
+    toast.success(`Kennzahl hinzugefügt: ${metricKey}`);
   };
 
   // Funktion: Suche zurücksetzen
@@ -411,18 +473,56 @@ const SimpleChatInterface: React.FC = () => {
                 </Select>
                 
                 {selectedProject && (
-                  <Button 
-                    variant="destructive"
-                    onClick={() => setShowDeleteProjectDialog(true)}
-                    title="Projekt löschen"
-                    className="shadow-sm"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        setProjectToRename(selectedProject);
+                        setRenameProjectDialog(true);
+                      }}
+                      title="Projekt umbenennen"
+                      className="shadow-sm"
+                    >
+                      Umbenennen
+                    </Button>
+                    <Button 
+                      variant="destructive"
+                      onClick={() => setShowDeleteProjectDialog(true)}
+                      title="Projekt löschen"
+                      className="shadow-sm"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
           )}
+
+          {/* Dialog zum Umbenennen eines Projekts */}
+          <Dialog open={renameProjectDialog} onOpenChange={setRenameProjectDialog}>
+            <DialogContent className="glass-panel">
+              <DialogHeader>
+                <DialogTitle>Projekt umbenennen</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <Input
+                  placeholder="Neuer Projektname"
+                  value={projectToRename}
+                  onChange={(e) => setProjectToRename(e.target.value)}
+                  className="glass-input"
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setRenameProjectDialog(false)}>
+                  Abbrechen
+                </Button>
+                <Button onClick={handleRenameProject}>
+                  Umbenennen
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Projekt löschen Dialog */}
           <Dialog open={showDeleteProjectDialog} onOpenChange={setShowDeleteProjectDialog}>
@@ -587,7 +687,7 @@ const SimpleChatInterface: React.FC = () => {
                     <TableHead>Absender</TableHead>
                     <TableHead>Text</TableHead>
                     <TableHead>Zeit</TableHead>
-                    <TableHead></TableHead>
+                    <TableHead>Aktionen</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -612,14 +712,26 @@ const SimpleChatInterface: React.FC = () => {
                         })}
                       </TableCell>
                       <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => confirmDeleteMessage(result.id)}
-                          title="Nachricht löschen"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleCopyMessage(result.text)}
+                            title="Nachricht kopieren"
+                            className="h-7 w-7"
+                          >
+                            <Copy className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => confirmDeleteMessage(result.id)}
+                            title="Nachricht löschen"
+                            className="h-7 w-7"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -646,9 +758,14 @@ const SimpleChatInterface: React.FC = () => {
                 key={msg.id}
                 className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
               >
-                <div className="group relative">
+                <ContextMenuActions
+                  className={`group relative max-w-[80%]`}
+                  isMessage={true}
+                  onCopy={() => handleCopyMessage(msg.text)}
+                  onDelete={() => msg.id !== "welcome" && confirmDeleteMessage(msg.id)}
+                >
                   <div
-                    className={`max-w-[80%] p-3 rounded-lg shadow-sm ${
+                    className={`p-3 rounded-lg shadow-sm ${
                       msg.sender === "user"
                         ? "bg-primary text-primary-foreground"
                         : "bg-card border-[0.5px] border-border/50 text-card-foreground"
@@ -662,21 +779,10 @@ const SimpleChatInterface: React.FC = () => {
                       })}
                     </div>
                   </div>
-                  
-                  {msg.id !== "welcome" && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-0 right-0 -m-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 hover:bg-background"
-                      onClick={() => confirmDeleteMessage(msg.id)}
-                      title="Nachricht löschen"
-                    >
-                      <Trash2 className="h-3 w-3 text-destructive" />
-                    </Button>
-                  )}
-                </div>
+                </ContextMenuActions>
               </div>
             ))}
+            <div ref={messagesEndRef} />
         </div>
 
         {/* Input area */}
