@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTheme } from "next-themes";
 
 interface SettingsModalProps {
   open: boolean;
@@ -36,6 +37,7 @@ type UserSettings = z.infer<typeof userSettingsSchema>;
 const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => {
   const [activeTab, setActiveTab] = useState("user");
   const { user } = useAuth();
+  const { setTheme } = useTheme();
 
   // Laden der gespeicherten Einstellungen aus localStorage
   const loadSavedSettings = (): UserSettings => {
@@ -75,6 +77,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
   const onSaveUserSettings = (data: UserSettings) => {
     localStorage.setItem("hcs-user-settings", JSON.stringify(data));
     console.log("Benutzereinstellungen gespeichert:", data);
+    
+    // Apply theme immediately when saved
+    setTheme(data.theme);
+    
     toast.success("Benutzereinstellungen wurden gespeichert");
   };
 
@@ -88,6 +94,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>HCS Messenger Hub - Einstellungen</DialogTitle>
+          <DialogDescription>
+            Passen Sie Ihre persönlichen Einstellungen an
+          </DialogDescription>
         </DialogHeader>
         
         <Tabs defaultValue="user" value={activeTab} onValueChange={setActiveTab} className="w-full">

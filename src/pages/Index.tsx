@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   ResizablePanelGroup, 
   ResizablePanel, 
@@ -12,11 +11,19 @@ import SettingsModal from "@/components/SettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
+import { useTheme } from "next-themes";
 
 const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const { user, signOut } = useAuth();
+  const { theme } = useTheme();
+  
+  useEffect(() => {
+    if (theme) {
+      console.log("Current theme applied:", theme);
+    }
+  }, [theme]);
   
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
