@@ -4,7 +4,7 @@ import { MessageSquare } from "lucide-react";
 import { ContextMenuActions } from "@/components/ContextMenuActions";
 import { toast } from "sonner";
 
-interface ChatItem {
+interface ChatItemData {
   id: string;
   title: string;
   preview: string;
@@ -12,7 +12,7 @@ interface ChatItem {
 }
 
 interface ChatItemProps {
-  chat: ChatItem;
+  chat: ChatItemData;
   projectId: string;
   onRename: (chatId: string, projectId: string) => void;
   onDelete: (chatId: string, projectId: string) => void;
@@ -31,7 +31,6 @@ const ChatItem: React.FC<ChatItemProps> = ({
       isChat={true}
       onRename={() => onRename(chat.id, projectId)}
       onDelete={() => onDelete(chat.id, projectId)}
-      onAddToProject={() => toast.info("Diese Funktion wird bald verfügbar sein")}
     >
       <div className="flex-1 flex items-center gap-2">
         <MessageSquare className="h-3 w-3 text-muted-foreground" />

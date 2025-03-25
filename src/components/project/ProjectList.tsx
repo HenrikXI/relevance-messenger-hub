@@ -4,7 +4,7 @@ import { Collapsible } from "@/components/ui/collapsible";
 import ProjectItem from "./ProjectItem";
 import ChatList from "./ChatList";
 
-interface ChatItem {
+interface ChatItemData {
   id: string;
   title: string;
   preview: string;
@@ -15,7 +15,7 @@ interface ProjectListProps {
   projects: string[];
   expandedProjects: Record<string, boolean>;
   selectedProject: string | null;
-  chats: Record<string, ChatItem[]>;
+  chats: Record<string, ChatItemData[]>;
   onSelectProject: (project: string) => void;
   onToggleProject: (project: string) => void;
   onRenameProject: (project: string) => void;

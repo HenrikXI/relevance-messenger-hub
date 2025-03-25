@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CollapsibleContent } from "@/components/ui/collapsible";
 import ChatItem from "./ChatItem";
 
-interface ChatItem {
+interface ChatItemData {
   id: string;
   title: string;
   preview: string;
@@ -14,7 +14,7 @@ interface ChatItem {
 
 interface ChatListProps {
   projectName: string;
-  chats: ChatItem[];
+  chats: ChatItemData[];
   onCreateChat: (project: string) => void;
   onRenameChat: (chatId: string, projectId: string) => void;
   onDeleteChat: (chatId: string, projectId: string) => void;

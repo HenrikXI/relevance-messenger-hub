@@ -12,17 +12,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Copy, Edit, MoreHorizontal, Share, Trash2, Archive, FolderPlus } from "lucide-react";
+import { Copy, Edit, MoreHorizontal, Trash2, FolderPlus } from "lucide-react";
 
 interface ContextActionProps {
   children: React.ReactNode;
   onRename?: () => void;
   onDelete?: () => void;
-  onArchive?: () => void;
   onCopy?: () => void;
-  onShare?: () => void;
   onAddToProject?: () => void;
-  onClick?: () => void; // Added onClick prop to the interface
+  onClick?: () => void;
   isProject?: boolean;
   isChat?: boolean;
   isMessage?: boolean;
@@ -33,11 +31,9 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
   children,
   onRename,
   onDelete,
-  onArchive,
   onCopy,
-  onShare,
   onAddToProject,
-  onClick, // Add onClick to the parameter list
+  onClick,
   isProject = false,
   isChat = false,
   isMessage = false,
@@ -49,7 +45,7 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
       <ContextMenuTrigger asChild>
         <div 
           className={className}
-          onClick={onClick} // Use the onClick prop here
+          onClick={onClick}
         >
           {children}
           
@@ -90,13 +86,6 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  {onShare && (
-                    <DropdownMenuItem onClick={onShare}>
-                      <Share className="mr-2 h-4 w-4" />
-                      <span>Gemeinsam nutzen</span>
-                    </DropdownMenuItem>
-                  )}
-                  
                   {onAddToProject && (
                     <DropdownMenuItem onClick={onAddToProject}>
                       <FolderPlus className="mr-2 h-4 w-4" />
@@ -108,13 +97,6 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
                     <DropdownMenuItem onClick={onRename}>
                       <Edit className="mr-2 h-4 w-4" />
                       <span>Umbenennen</span>
-                    </DropdownMenuItem>
-                  )}
-                  
-                  {onArchive && (
-                    <DropdownMenuItem onClick={onArchive}>
-                      <Archive className="mr-2 h-4 w-4" />
-                      <span>Archivieren</span>
                     </DropdownMenuItem>
                   )}
                   
@@ -135,13 +117,6 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
       </ContextMenuTrigger>
       
       <ContextMenuContent className="w-56">
-        {onShare && (
-          <ContextMenuItem onClick={onShare}>
-            <Share className="mr-2 h-4 w-4" />
-            <span>Gemeinsam nutzen</span>
-          </ContextMenuItem>
-        )}
-        
         {onAddToProject && (
           <ContextMenuItem onClick={onAddToProject}>
             <FolderPlus className="mr-2 h-4 w-4" />
@@ -153,13 +128,6 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
           <ContextMenuItem onClick={onRename}>
             <Edit className="mr-2 h-4 w-4" />
             <span>Umbenennen</span>
-          </ContextMenuItem>
-        )}
-        
-        {onArchive && (
-          <ContextMenuItem onClick={onArchive}>
-            <Archive className="mr-2 h-4 w-4" />
-            <span>Archivieren</span>
           </ContextMenuItem>
         )}
         
