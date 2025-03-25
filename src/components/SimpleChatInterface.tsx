@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,29 +85,42 @@ const SimpleChatInterface: React.FC = () => {
   const [showDeleteProjectDialog, setShowDeleteProjectDialog] = useState(false);
   const [advancedSearch, setAdvancedSearch] = useState(false);
   const [searchByProject, setSearchByProject] = useState("");
+  const [showDeleteMessageDialog, setShowDeleteMessageDialog] = useState<string | null>(null);
 
   // Laden der Daten aus localStorage beim Start
   useEffect(() => {
     const savedProjects = localStorage.getItem("projects");
     if (savedProjects) {
-      setProjects(JSON.parse(savedProjects));
+      try {
+        setProjects(JSON.parse(savedProjects));
+      } catch (error) {
+        console.error("Fehler beim Laden der Projekte:", error);
+      }
     }
 
     const savedMessages = localStorage.getItem("messages");
     if (savedMessages) {
-      const parsedMessages = JSON.parse(savedMessages);
-      // Konvertieren der String-Timestamps zurück in Date-Objekte
-      const messagesWithDates = parsedMessages.map((msg: any) => ({
-        ...msg,
-        timestamp: new Date(msg.timestamp)
-      }));
-      setMessages(messagesWithDates);
-      setHistory(messagesWithDates);
+      try {
+        const parsedMessages = JSON.parse(savedMessages);
+        // Konvertieren der String-Timestamps zurück in Date-Objekte
+        const messagesWithDates = parsedMessages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+        setMessages(messagesWithDates);
+        setHistory(messagesWithDates);
+      } catch (error) {
+        console.error("Fehler beim Laden der Nachrichten:", error);
+      }
     }
 
     const savedMetrics = localStorage.getItem("projectMetrics");
     if (savedMetrics) {
-      setProjectMetrics(JSON.parse(savedMetrics));
+      try {
+        setProjectMetrics(JSON.parse(savedMetrics));
+      } catch (error) {
+        console.error("Fehler beim Laden der Kennzahlen:", error);
+      }
     }
   }, []);
 
@@ -156,20 +170,45 @@ const SimpleChatInterface: React.FC = () => {
     setProjectMetrics(newMetrics);
     
     // Lösche zugehörige Nachrichten
-    setMessages(prev => prev.filter(msg => msg.projectName !== selectedProject || msg.id === "welcome"));
-    setHistory(prev => prev.filter(msg => msg.projectName !== selectedProject));
+    const filteredMessages = messages.filter(msg => msg.projectName !== selectedProject || msg.id === "welcome");
+    setMessages(filteredMessages);
+    setHistory(history.filter(msg => msg.projectName !== selectedProject));
     
     // Reset Auswahl und Dialog
     setSelectedProject("");
     setShowDeleteProjectDialog(false);
     
+    // Update localStorage after deletion
+    localStorage.setItem("messages", JSON.stringify(filteredMessages));
+    
     toast.success(`Projekt "${selectedProject}" wurde gelöscht`);
   };
 
-  // Funktion: Nachricht löschen
-  const handleDeleteMessage = (messageId: string) => {
-    setMessages(prev => prev.filter(msg => msg.id !== messageId));
-    setHistory(prev => prev.filter(msg => msg.id !== messageId));
+  // Funktion: Nachricht löschen mit Dialog
+  const confirmDeleteMessage = (messageId: string) => {
+    setShowDeleteMessageDialog(messageId);
+  };
+
+  // Funktion: Nachricht löschen durchführen
+  const handleDeleteMessage = () => {
+    if (!showDeleteMessageDialog) return;
+    
+    const messageId = showDeleteMessageDialog;
+    const updatedMessages = messages.filter(msg => msg.id !== messageId);
+    const updatedHistory = history.filter(msg => msg.id !== messageId);
+    
+    setMessages(updatedMessages);
+    setHistory(updatedHistory);
+    
+    // Update searchResults if we're currently showing search results
+    if (searchResults.length > 0) {
+      setSearchResults(searchResults.filter(msg => msg.id !== messageId));
+    }
+    
+    // Update localStorage after deletion
+    localStorage.setItem("messages", JSON.stringify(updatedMessages));
+    
+    setShowDeleteMessageDialog(null);
     toast.success("Nachricht wurde gelöscht");
   };
 
@@ -186,9 +225,15 @@ const SimpleChatInterface: React.FC = () => {
       projectName: selectedProject
     };
     
-    setMessages((prev) => [...prev, newMessage]);
-    setHistory((prev) => [...prev, newMessage]);
+    const updatedMessages = [...messages, newMessage];
+    const updatedHistory = [...history, newMessage];
+    
+    setMessages(updatedMessages);
+    setHistory(updatedHistory);
     setInput("");
+    
+    // Save to localStorage
+    localStorage.setItem("messages", JSON.stringify(updatedMessages));
 
     // Generiere Agentenantwort im Hintergrund
     setTimeout(() => {
@@ -201,8 +246,14 @@ const SimpleChatInterface: React.FC = () => {
         projectName: selectedProject
       };
       
-      setMessages((prev) => [...prev, responseMessage]);
-      setHistory((prev) => [...prev, responseMessage]);
+      const withResponseMessages = [...updatedMessages, responseMessage];
+      const withResponseHistory = [...updatedHistory, responseMessage];
+      
+      setMessages(withResponseMessages);
+      setHistory(withResponseHistory);
+      
+      // Save to localStorage including the agent response
+      localStorage.setItem("messages", JSON.stringify(withResponseMessages));
     }, 1000);
   };
 
@@ -294,6 +345,13 @@ const SimpleChatInterface: React.FC = () => {
     
     setMetricKey("");
     setMetricValue("");
+  };
+
+  // Funktion: Suche zurücksetzen
+  const resetSearch = () => {
+    setSearchResults([]);
+    setSearchQuery("");
+    setSearchByProject("");
   };
 
   // Handle key press for inputs
@@ -388,6 +446,27 @@ const SimpleChatInterface: React.FC = () => {
             </DialogContent>
           </Dialog>
 
+          {/* Nachricht löschen Dialog */}
+          <Dialog open={!!showDeleteMessageDialog} onOpenChange={(open) => !open && setShowDeleteMessageDialog(null)}>
+            <DialogContent className="glass-panel">
+              <DialogHeader>
+                <DialogTitle>Nachricht löschen</DialogTitle>
+              </DialogHeader>
+              <p>
+                Möchten Sie diese Nachricht wirklich löschen?
+              </p>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowDeleteMessageDialog(null)}>
+                  Abbrechen
+                </Button>
+                <Button variant="destructive" onClick={handleDeleteMessage}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Löschen
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           {/* Kennzahlen - mit hervorgehobenem Button */}
           <div>
             <h3 className="text-lg font-medium mb-2">Projektkennzahlen</h3>
@@ -448,6 +527,17 @@ const SimpleChatInterface: React.FC = () => {
             >
               {advancedSearch ? "Einfache Suche" : "Erweiterte Suche"}
             </Button>
+            
+            {searchResults.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={resetSearch}
+                className="text-xs"
+              >
+                Suche zurücksetzen
+              </Button>
+            )}
           </div>
           
           <div className="flex flex-col gap-2">
@@ -525,7 +615,7 @@ const SimpleChatInterface: React.FC = () => {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          onClick={() => handleDeleteMessage(result.id)}
+                          onClick={() => confirmDeleteMessage(result.id)}
                           title="Nachricht löschen"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
@@ -578,7 +668,7 @@ const SimpleChatInterface: React.FC = () => {
                       variant="ghost"
                       size="icon"
                       className="absolute top-0 right-0 -m-2 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 hover:bg-background"
-                      onClick={() => handleDeleteMessage(msg.id)}
+                      onClick={() => confirmDeleteMessage(msg.id)}
                       title="Nachricht löschen"
                     >
                       <Trash2 className="h-3 w-3 text-destructive" />
