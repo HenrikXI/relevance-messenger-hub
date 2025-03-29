@@ -4,7 +4,6 @@ import { Folder, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContextMenuActions } from "@/components/ContextMenuActions";
 import { CollapsibleTrigger } from "@/components/ui/collapsible";
-import { toast } from "sonner";
 
 interface ProjectItemProps {
   project: string;

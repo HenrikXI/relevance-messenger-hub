@@ -43,6 +43,21 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
   isMessage = false,
   className,
 }) => {
+  // Safe handler to prevent React state updates on unmounted components
+  const safeHandler = (handler?: () => void) => {
+    if (!handler) return undefined;
+    
+    return (e: React.MouseEvent) => {
+      e.stopPropagation();
+      
+      // Use setTimeout to ensure the menu is fully closed before the action is executed
+      // This prevents UI freezes when components are unmounted during menu interactions
+      setTimeout(() => {
+        handler();
+      }, 0);
+    };
+  };
+
   // Use standard ContextMenu for right-click actions
   return (
     <ContextMenu>
@@ -67,7 +82,7 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
               )}
               {onDelete && (
                 <button 
-                  onClick={(e) => { e.stopPropagation(); onDelete(); }} 
+                  onClick={safeHandler(onDelete)} 
                   className="p-1 hover:bg-accent rounded-full"
                   title="Löschen"
                 >
@@ -91,14 +106,14 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   {onAddToProject && (
-                    <DropdownMenuItem onClick={onAddToProject}>
+                    <DropdownMenuItem onClick={safeHandler(onAddToProject)}>
                       <FolderPlus className="mr-2 h-4 w-4" />
                       <span>Zu Projekt hinzufügen</span>
                     </DropdownMenuItem>
                   )}
                   
                   {onRename && (
-                    <DropdownMenuItem onClick={onRename}>
+                    <DropdownMenuItem onClick={safeHandler(onRename)}>
                       <Edit className="mr-2 h-4 w-4" />
                       <span>Umbenennen</span>
                     </DropdownMenuItem>
@@ -106,7 +121,7 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
                   
                   {onDelete && (
                     <DropdownMenuItem 
-                      onClick={onDelete}
+                      onClick={safeHandler(onDelete)}
                       className="text-destructive focus:text-destructive"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
@@ -122,21 +137,21 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
       
       <ContextMenuContent className="w-56">
         {onAddToProject && (
-          <ContextMenuItem onClick={onAddToProject}>
+          <ContextMenuItem onClick={safeHandler(onAddToProject)}>
             <FolderPlus className="mr-2 h-4 w-4" />
             <span>Zu Projekt hinzufügen</span>
           </ContextMenuItem>
         )}
         
         {onRename && (
-          <ContextMenuItem onClick={onRename}>
+          <ContextMenuItem onClick={safeHandler(onRename)}>
             <Edit className="mr-2 h-4 w-4" />
             <span>Umbenennen</span>
           </ContextMenuItem>
         )}
         
         {onCopy && (
-          <ContextMenuItem onClick={onCopy}>
+          <ContextMenuItem onClick={safeHandler(onCopy)}>
             <Copy className="mr-2 h-4 w-4" />
             <span>Kopieren</span>
           </ContextMenuItem>
@@ -144,7 +159,7 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
         
         {onDelete && (
           <ContextMenuItem 
-            onClick={onDelete}
+            onClick={safeHandler(onDelete)}
             className="text-destructive focus:text-destructive"
           >
             <Trash2 className="mr-2 h-4 w-4" />
