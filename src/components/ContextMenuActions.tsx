@@ -20,6 +20,8 @@ interface ContextActionProps {
   onDelete?: () => void;
   onCopy?: () => void;
   onAddToProject?: () => void;
+  onShare?: () => void;
+  onArchive?: () => void;
   onClick?: () => void;
   isProject?: boolean;
   isChat?: boolean;
@@ -33,6 +35,8 @@ export const ContextMenuActions: React.FC<ContextActionProps> = ({
   onDelete,
   onCopy,
   onAddToProject,
+  onShare,
+  onArchive,
   onClick,
   isProject = false,
   isChat = false,

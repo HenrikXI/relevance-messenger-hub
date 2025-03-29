@@ -37,8 +37,6 @@ const ProjectItem: React.FC<ProjectItemProps> = ({
           isProject={true}
           onRename={() => onRename(project)}
           onDelete={() => onDelete(project)}
-          onShare={() => toast.info("Teilen-Funktion wird bald verfügbar sein")}
-          onArchive={() => toast.info("Archivieren-Funktion wird bald verfügbar sein")}
           onClick={() => onSelect(project)}
         >
           <div className="flex-1 flex items-center gap-2">
