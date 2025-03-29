@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Folder, ChevronDown, ChevronRight } from "lucide-react";
+import { Folder, ChevronDown, ChevronRight, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContextMenuActions } from "@/components/ContextMenuActions";
 import { CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -42,6 +42,18 @@ const ProjectItem: React.FC<ProjectItemProps> = ({
             <Folder className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">{project}</span>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCreateChat(project);
+            }}
+            title="Neuen Chat erstellen"
+          >
+            <PlusCircle className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
         </ContextMenuActions>
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="p-1 h-7 w-7" onClick={() => onToggleExpand(project)}>
