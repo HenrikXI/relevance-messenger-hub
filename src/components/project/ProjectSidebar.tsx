@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,8 +30,8 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
   const [itemToRename, setItemToRename] = useState<{type: 'project' | 'chat', id: string, name: string, projectId?: string}>({type: 'project', id: '', name: ''});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{type: 'project' | 'chat', id: string, name: string, projectId?: string}>({type: 'project', id: '', name: ''});
+  const [filteredChats, setFilteredChats] = useState<Record<string, ChatItem[]>>({});
 
-  // Load data from localStorage on mount
   useEffect(() => {
     try {
       const savedProjects = localStorage.getItem("projects");
@@ -43,6 +42,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
       const savedChats = localStorage.getItem("projectChats");
       if (savedChats) {
         setChats(JSON.parse(savedChats));
+        setFilteredChats(JSON.parse(savedChats));
       }
       
       const savedExpanded = localStorage.getItem("expandedProjects");
@@ -54,7 +54,6 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
     }
   }, []);
 
-  // Save data to localStorage when it changes
   useEffect(() => {
     if (projects.length > 0) {
       localStorage.setItem("projects", JSON.stringify(projects));
@@ -75,9 +74,8 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
     const newProject = projectInput.trim();
     if (!projects.includes(newProject)) {
       setProjects(prev => [...prev, newProject]);
-      // Initialize empty chats array for this project
       setChats(prev => ({...prev, [newProject]: []}));
-      // Auto-expand the newly created project
+      setFilteredChats(prev => ({...prev, [newProject]: []}));
       setExpandedProjects(prev => ({...prev, [newProject]: true}));
     }
     setSelectedProject(newProject);
@@ -93,6 +91,11 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
     };
     
     setChats(prev => ({
+      ...prev,
+      [projectName]: [...(prev[projectName] || []), newChat]
+    }));
+    
+    setFilteredChats(prev => ({
       ...prev,
       [projectName]: [...(prev[projectName] || []), newChat]
     }));
@@ -151,7 +154,6 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
 
   const performRename = (newName: string) => {
     if (itemToRename.type === 'project') {
-      // Rename project
       const oldName = itemToRename.id;
       const projectIndex = projects.findIndex(p => p === oldName);
       if (projectIndex !== -1) {
@@ -159,21 +161,24 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
         updatedProjects[projectIndex] = newName;
         setProjects(updatedProjects);
         
-        // Update chats for this project
         const projectChats = chats[oldName] || [];
         const updatedChats = {...chats};
         delete updatedChats[oldName];
         updatedChats[newName] = projectChats;
         setChats(updatedChats);
         
-        // Update expanded state
+        const filteredProjectChats = filteredChats[oldName] || [];
+        const updatedFilteredChats = {...filteredChats};
+        delete updatedFilteredChats[oldName];
+        updatedFilteredChats[newName] = filteredProjectChats;
+        setFilteredChats(updatedFilteredChats);
+        
         const isExpanded = expandedProjects[oldName];
         const updatedExpanded = {...expandedProjects};
         delete updatedExpanded[oldName];
         updatedExpanded[newName] = isExpanded;
         setExpandedProjects(updatedExpanded);
         
-        // Update selected project if needed
         if (selectedProject === oldName) {
           setSelectedProject(newName);
         }
@@ -181,7 +186,6 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
         toast.success(`Projekt umbenannt: ${oldName} → ${newName}`);
       }
     } else if (itemToRename.type === 'chat' && itemToRename.projectId) {
-      // Rename chat
       const projectId = itemToRename.projectId;
       const chatId = itemToRename.id;
       const projectChats = [...(chats[projectId] || [])];
@@ -198,6 +202,21 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
           [projectId]: projectChats
         }));
         
+        const filteredProjectChats = [...(filteredChats[projectId] || [])];
+        const filteredChatIndex = filteredProjectChats.findIndex(c => c.id === chatId);
+        
+        if (filteredChatIndex !== -1) {
+          filteredProjectChats[filteredChatIndex] = {
+            ...filteredProjectChats[filteredChatIndex],
+            title: newName
+          };
+          
+          setFilteredChats(prev => ({
+            ...prev,
+            [projectId]: filteredProjectChats
+          }));
+        }
+        
         toast.success(`Chat umbenannt: ${itemToRename.name} → ${newName}`);
       }
     }
@@ -205,28 +224,27 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
 
   const performDelete = () => {
     if (itemToDelete.type === 'project') {
-      // Delete project
       const projectId = itemToDelete.id;
       setProjects(prev => prev.filter(p => p !== projectId));
       
-      // Remove chats for this project
       const updatedChats = {...chats};
       delete updatedChats[projectId];
       setChats(updatedChats);
       
-      // Remove from expanded state
+      const updatedFilteredChats = {...filteredChats};
+      delete updatedFilteredChats[projectId];
+      setFilteredChats(updatedFilteredChats);
+      
       const updatedExpanded = {...expandedProjects};
       delete updatedExpanded[projectId];
       setExpandedProjects(updatedExpanded);
       
-      // Update selected project if needed
       if (selectedProject === projectId) {
         setSelectedProject(null);
       }
       
       toast.success(`Projekt "${projectId}" wurde gelöscht`);
     } else if (itemToDelete.type === 'chat' && itemToDelete.projectId) {
-      // Delete chat
       const projectId = itemToDelete.projectId;
       const chatId = itemToDelete.id;
       const projectChats = chats[projectId] || [];
@@ -237,16 +255,62 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
         [projectId]: updatedProjectChats
       }));
       
+      const filteredProjectChats = filteredChats[projectId] || [];
+      const updatedFilteredProjectChats = filteredProjectChats.filter(c => c.id !== chatId);
+      
+      setFilteredChats(prev => ({
+        ...prev,
+        [projectId]: updatedFilteredProjectChats
+      }));
+      
       toast.success(`Chat "${itemToDelete.name}" wurde gelöscht`);
     }
     
     setDeleteDialogOpen(false);
   };
 
-  // Filter projects based on search query
-  const filteredProjects = projects.filter(project => 
-    searchQuery ? project.toLowerCase().includes(searchQuery.toLowerCase()) : true
-  );
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    
+    if (!value.trim()) {
+      setFilteredChats({...chats});
+      return;
+    }
+    
+    const query = value.toLowerCase();
+    
+    const newFilteredChats: Record<string, ChatItem[]> = {};
+    
+    Object.keys(chats).forEach(projectName => {
+      const projectChats = chats[projectName] || [];
+      
+      if (projectName.toLowerCase().includes(query)) {
+        newFilteredChats[projectName] = projectChats;
+        setExpandedProjects(prev => ({...prev, [projectName]: true}));
+        return;
+      }
+      
+      const matchingChats = projectChats.filter(chat => 
+        chat.title.toLowerCase().includes(query) || 
+        chat.preview.toLowerCase().includes(query)
+      );
+      
+      if (matchingChats.length > 0) {
+        newFilteredChats[projectName] = matchingChats;
+        setExpandedProjects(prev => ({...prev, [projectName]: true}));
+      }
+    });
+    
+    setFilteredChats(newFilteredChats);
+  };
+
+  const filteredProjects = projects.filter(project => {
+    if (!searchQuery.trim()) return true;
+    
+    if (project.toLowerCase().includes(searchQuery.toLowerCase())) return true;
+    
+    return !!filteredChats[project]?.length;
+  });
 
   return (
     <div className="flex flex-col h-full relative">
@@ -266,12 +330,11 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
           <div className="p-4 border-b">
             <h2 className="text-lg font-medium mb-2">Projekte</h2>
             
-            {/* Search bar for projects */}
             <div className="mb-3 relative">
               <Input
-                placeholder="Projekte durchsuchen..."
+                placeholder="Projekte und Chats durchsuchen..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)}
                 className="glass-input pr-8"
               />
               <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -298,7 +361,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
               projects={filteredProjects}
               expandedProjects={expandedProjects}
               selectedProject={selectedProject}
-              chats={chats}
+              chats={filteredChats}
               onSelectProject={setSelectedProject}
               onToggleProject={toggleProjectExpansion}
               onRenameProject={handleRenameProject}
