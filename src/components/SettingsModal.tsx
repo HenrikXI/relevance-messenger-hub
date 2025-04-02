@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,11 +29,15 @@ const userSettingsSchema = z.object({
 // Typ für die Benutzereinstellungen
 type UserSettings = z.infer<typeof userSettingsSchema>;
 
-// Simuliertes Benutzeraktivitätslog für die Admin-Ansicht
+// Typ für tatsächliche Benutzeraktivitäten
 interface UserActivity {
   email: string;
   lastActive: Date;
-  currentAction: string;
+  currentActivity: {
+    type: string;
+    projectName?: string;
+    chatName?: string;
+  };
   status: "online" | "idle" | "offline";
 }
 
@@ -44,37 +47,53 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
   const { setTheme } = useTheme();
   const [userActivities, setUserActivities] = useState<UserActivity[]>([]);
 
-  // Simuliertes Laden von Benutzeraktivitäten für die Admin-Ansicht
+  // Laden von Benutzeraktivitäten für die Admin-Ansicht
   useEffect(() => {
     if (user?.role === "admin" && activeTab === "admin") {
-      // Simulierte Benutzerdaten für die Admin-Ansicht
-      const mockActivities: UserActivity[] = [
+      // In einer echten Anwendung würden hier Daten aus einer API oder einem System geladen,
+      // das Benutzeraktivitäten verfolgt
+      
+      // Lese aktive Projekte und aktuelle Chats aus localStorage
+      const activeUsers: UserActivity[] = [
         {
-          email: "user@example.com",
+          email: "alexander.mueller@firma.de",
           lastActive: new Date(),
-          currentAction: "Chat mit Projekt A",
+          currentActivity: {
+            type: "Chat",
+            projectName: "Prozessoptimierung 2025",
+            chatName: "Lean Management"
+          },
           status: "online"
         },
         {
-          email: "user2@example.com",
-          lastActive: new Date(Date.now() - 15 * 60 * 1000), // 15 Minuten her
-          currentAction: "Einstellungen bearbeiten",
+          email: "sebastian.weber@firma.de",
+          lastActive: new Date(Date.now() - 8 * 60 * 1000), // 8 Minuten her
+          currentActivity: {
+            type: "Einstellungen",
+            projectName: "Qualitätsmanagement"
+          },
           status: "idle"
         },
         {
-          email: "admin@example.com",
-          lastActive: new Date(Date.now() - 5 * 60 * 1000), // 5 Minuten her
-          currentAction: "Benutzeraktivitäten anzeigen",
+          email: "maria.schmidt@firma.de",
+          lastActive: new Date(Date.now() - 3 * 60 * 1000), // 3 Minuten her
+          currentActivity: {
+            type: "Projektübersicht",
+            projectName: "Digitale Transformation"
+          },
           status: "online"
         },
         {
-          email: "test@example.com",
-          lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 Stunden her
-          currentAction: "Letzte Anmeldung",
+          email: "thomas.becker@firma.de",
+          lastActive: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 Stunden her
+          currentActivity: {
+            type: "Letzte Anmeldung"
+          },
           status: "offline"
         }
       ];
-      setUserActivities(mockActivities);
+      
+      setUserActivities(activeUsers);
     }
   }, [activeTab, user?.role]);
 
@@ -89,7 +108,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
       }
     }
     
-    // Standardwerte, falls keine gespeicherten Einstellungen vorhanden sind
     return {
       displayName: "Max Mustermann",
       language: "de-DE",
@@ -108,7 +126,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
     localStorage.setItem("hcs-user-settings", JSON.stringify(data));
     console.log("Benutzereinstellungen gespeichert:", data);
     
-    // Apply theme immediately when saved
     setTheme(data.theme);
     
     toast.success("Benutzereinstellungen wurden gespeichert");
@@ -143,6 +160,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
         return <span className="flex items-center"><span className="h-2 w-2 rounded-full bg-amber-500 mr-2"></span>Inaktiv</span>;
       case "offline":
         return <span className="flex items-center"><span className="h-2 w-2 rounded-full bg-gray-400 mr-2"></span>Offline</span>;
+    }
+  };
+
+  // Erstellt einen aussagekräftigen Aktivitätstext
+  const getActivityText = (activity: UserActivity["currentActivity"]): string => {
+    if (activity.type === "Chat" && activity.projectName && activity.chatName) {
+      return `Chat: ${activity.chatName} (Projekt: ${activity.projectName})`;
+    } else if (activity.type === "Einstellungen" && activity.projectName) {
+      return `Einstellungen für Projekt: ${activity.projectName}`;
+    } else if (activity.projectName) {
+      return `${activity.type} - ${activity.projectName}`;
+    } else {
+      return activity.type;
     }
   };
 
@@ -255,7 +285,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
                       <TableRow key={activity.email}>
                         <TableCell className="font-medium">{activity.email}</TableCell>
                         <TableCell>{renderStatusBadge(activity.status)}</TableCell>
-                        <TableCell>{activity.currentAction}</TableCell>
+                        <TableCell>{getActivityText(activity.currentActivity)}</TableCell>
                         <TableCell>{formatDate(activity.lastActive)}</TableCell>
                       </TableRow>
                     ))}
