@@ -1,7 +1,7 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 
 const verificationSchema = z.object({
   code: z.string().min(6, "Verifizierungscode muss mindestens 6 Zeichen lang sein").max(6, "Verifizierungscode darf maximal 6 Zeichen lang sein")
@@ -19,6 +20,17 @@ type VerificationFormValues = z.infer<typeof verificationSchema>;
 const VerifyEmail = () => {
   const { verifyEmail, sendVerificationEmail, pendingVerificationEmail } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resendDisabled, setResendDisabled] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const navigate = useNavigate();
+
+  // Redirect to signin if no pending verification
+  useEffect(() => {
+    if (!pendingVerificationEmail) {
+      toast.error("Keine ausstehende E-Mail-Überprüfung");
+      navigate("/signin");
+    }
+  }, [pendingVerificationEmail, navigate]);
 
   const form = useForm<VerificationFormValues>({
     resolver: zodResolver(verificationSchema),
@@ -30,15 +42,40 @@ const VerifyEmail = () => {
   const onSubmit = async (values: VerificationFormValues) => {
     setIsSubmitting(true);
     try {
-      await verifyEmail(values.code);
+      const success = await verifyEmail(values.code);
+      if (success) {
+        toast.success("E-Mail erfolgreich verifiziert! Sie können sich jetzt anmelden.");
+        form.reset();
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const resendVerificationEmail = async () => {
-    if (pendingVerificationEmail) {
-      await sendVerificationEmail(pendingVerificationEmail);
+    if (pendingVerificationEmail && !resendDisabled) {
+      setResendDisabled(true);
+      setCountdown(60);
+      
+      try {
+        await sendVerificationEmail(pendingVerificationEmail);
+        toast.success("Neuer Bestätigungscode wurde gesendet");
+      } catch (error) {
+        console.error("Fehler beim Senden der Verifizierungs-E-Mail", error);
+        toast.error("Fehler beim Senden der Verifizierungs-E-Mail");
+      }
+      
+      // Countdown für erneutes Senden
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setResendDisabled(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     }
   };
 
@@ -52,40 +89,31 @@ const VerifyEmail = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {!pendingVerificationEmail ? (
-            <div className="text-center">
-              <p className="text-muted-foreground mb-4">Keine ausstehende E-Mail-Überprüfung.</p>
-              <Link to="/signin">
-                <Button variant="outline">Zurück zur Anmeldung</Button>
-              </Link>
-            </div>
-          ) : (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Bestätigungscode</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="XXXXXX" 
-                          {...field}
-                          maxLength={6}
-                          className="text-center tracking-widest text-lg"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Wird überprüft..." : "Bestätigen"}
-                </Button>
-              </form>
-            </Form>
-          )}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bestätigungscode</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="XXXXXX" 
+                        {...field}
+                        maxLength={6}
+                        className="text-center tracking-widest text-lg"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Wird überprüft..." : "Bestätigen"}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
         <CardFooter className="flex flex-col">
           <div className="text-sm text-center text-muted-foreground mt-2">
@@ -94,9 +122,9 @@ const VerifyEmail = () => {
               variant="link" 
               className="p-0 h-auto" 
               onClick={resendVerificationEmail}
-              disabled={!pendingVerificationEmail || isSubmitting}
+              disabled={resendDisabled || !pendingVerificationEmail}
             >
-              Erneut senden
+              {resendDisabled ? `Erneut senden (${countdown}s)` : "Erneut senden"}
             </Button>
           </div>
           <div className="text-sm text-center text-muted-foreground mt-2">

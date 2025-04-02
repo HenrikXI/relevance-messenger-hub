@@ -34,7 +34,7 @@ export const useAuth = () => {
 
 // Simulierte Verifizierungscodes für Benutzer
 const generateVerificationCode = () => {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -55,6 +55,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem("hcs-user");
       }
     }
+
+    // Check for pending verification
+    const storedPendingEmail = localStorage.getItem("hcs-pending-verification");
+    if (storedPendingEmail) {
+      setPendingVerificationEmail(storedPendingEmail);
+    }
+    
     setLoading(false);
   }, []);
 
@@ -74,14 +81,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const sendVerificationEmail = async (email: string) => {
     // Generiere einen Verifikationscode
     const code = generateVerificationCode();
+    console.log(`Generated verification code for ${email}: ${code}`);
     setVerificationCodes(prev => ({ ...prev, [email]: code }));
     
     // Setze die E-Mail als ausstehend zur Verifizierung
     setPendingVerificationEmail(email);
+    localStorage.setItem("hcs-pending-verification", email);
     
     // In einer echten App würde hier eine E-Mail gesendet werden
     toast.success(`Bestätigungs-E-Mail wurde an ${email} gesendet`, {
-      description: "Bitte überprüfen Sie Ihre E-Mail und bestätigen Sie Ihre Anmeldung."
+      description: `Bitte überprüfen Sie Ihre E-Mail und bestätigen Sie Ihre Anmeldung. (Code: ${code})`
     });
     
     // Navigiere zur Bestätigungsseite
@@ -95,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const correctCode = verificationCodes[pendingVerificationEmail];
+    console.log(`Verifying code for ${pendingVerificationEmail}: input=${inputCode}, correct=${correctCode}`);
     
     if (inputCode === correctCode) {
       // Aktualisiere den Benutzer als verifiziert
@@ -115,9 +125,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { [pendingVerificationEmail]: _, ...restCodes } = verificationCodes;
       setVerificationCodes(restCodes);
       setPendingVerificationEmail(null);
+      localStorage.removeItem("hcs-pending-verification");
       
       toast.success("E-Mail erfolgreich verifiziert!");
-      navigate("/");
+      navigate("/signin");
       return true;
     } else {
       toast.error("Ungültiger Verifizierungscode");
