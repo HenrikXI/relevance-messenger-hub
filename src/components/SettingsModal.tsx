@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "next-themes";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { User } from "lucide-react";
 
 interface SettingsModalProps {
   open: boolean;
@@ -25,19 +27,56 @@ const userSettingsSchema = z.object({
   theme: z.string().min(1, "Bitte wählen Sie ein Theme"),
 });
 
-// Schema für Admin-Einstellungen
-const adminSettingsSchema = z.object({
-  apiKey: z.string().min(1, "API-Key ist erforderlich"),
-  apiUrl: z.string().url("Gültige URL erforderlich"),
-});
-
 // Typ für die Benutzereinstellungen
 type UserSettings = z.infer<typeof userSettingsSchema>;
+
+// Simuliertes Benutzeraktivitätslog für die Admin-Ansicht
+interface UserActivity {
+  email: string;
+  lastActive: Date;
+  currentAction: string;
+  status: "online" | "idle" | "offline";
+}
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => {
   const [activeTab, setActiveTab] = useState("user");
   const { user } = useAuth();
   const { setTheme } = useTheme();
+  const [userActivities, setUserActivities] = useState<UserActivity[]>([]);
+
+  // Simuliertes Laden von Benutzeraktivitäten für die Admin-Ansicht
+  useEffect(() => {
+    if (user?.role === "admin" && activeTab === "admin") {
+      // Simulierte Benutzerdaten für die Admin-Ansicht
+      const mockActivities: UserActivity[] = [
+        {
+          email: "user@example.com",
+          lastActive: new Date(),
+          currentAction: "Chat mit Projekt A",
+          status: "online"
+        },
+        {
+          email: "user2@example.com",
+          lastActive: new Date(Date.now() - 15 * 60 * 1000), // 15 Minuten her
+          currentAction: "Einstellungen bearbeiten",
+          status: "idle"
+        },
+        {
+          email: "admin@example.com",
+          lastActive: new Date(Date.now() - 5 * 60 * 1000), // 5 Minuten her
+          currentAction: "Benutzeraktivitäten anzeigen",
+          status: "online"
+        },
+        {
+          email: "test@example.com",
+          lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 Stunden her
+          currentAction: "Letzte Anmeldung",
+          status: "offline"
+        }
+      ];
+      setUserActivities(mockActivities);
+    }
+  }, [activeTab, user?.role]);
 
   // Laden der gespeicherten Einstellungen aus localStorage
   const loadSavedSettings = (): UserSettings => {
@@ -64,15 +103,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
     defaultValues: loadSavedSettings(),
   });
 
-  // Formular für Admin-Einstellungen
-  const adminForm = useForm<z.infer<typeof adminSettingsSchema>>({
-    resolver: zodResolver(adminSettingsSchema),
-    defaultValues: {
-      apiKey: "",
-      apiUrl: "https://api.example.com",
-    },
-  });
-
   // Einstellungen beim Speichern im localStorage ablegen
   const onSaveUserSettings = (data: UserSettings) => {
     localStorage.setItem("hcs-user-settings", JSON.stringify(data));
@@ -84,9 +114,36 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
     toast.success("Benutzereinstellungen wurden gespeichert");
   };
 
-  const onSaveAdminSettings = (data: z.infer<typeof adminSettingsSchema>) => {
-    console.log("Admin-Einstellungen gespeichert:", data);
-    toast.success("Admin-Einstellungen wurden gespeichert");
+  // Formatieren eines Datums für die Anzeige
+  const formatDate = (date: Date): string => {
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return "Gerade eben";
+    if (diffInMinutes < 60) return `Vor ${diffInMinutes} Minuten`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `Vor ${diffInHours} Stunden`;
+    
+    return date.toLocaleDateString('de-DE', { 
+      day: '2-digit', 
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Render-Funktion für die Status-Badge
+  const renderStatusBadge = (status: "online" | "idle" | "offline") => {
+    switch (status) {
+      case "online":
+        return <span className="flex items-center"><span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>Online</span>;
+      case "idle":
+        return <span className="flex items-center"><span className="h-2 w-2 rounded-full bg-amber-500 mr-2"></span>Inaktiv</span>;
+      case "offline":
+        return <span className="flex items-center"><span className="h-2 w-2 rounded-full bg-gray-400 mr-2"></span>Offline</span>;
+    }
   };
 
   return (
@@ -174,37 +231,42 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onOpenChange }) => 
           
           {user?.role === "admin" && (
             <TabsContent value="admin" className="space-y-4 mt-4">
-              <Form {...adminForm}>
-                <form onSubmit={adminForm.handleSubmit(onSaveAdminSettings)} className="space-y-4">
-                  <FormField
-                    control={adminForm.control}
-                    name="apiKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>API-Key</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="password" />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={adminForm.control}
-                    name="apiUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>API-URL</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button type="submit" className="w-full">Speichern</Button>
-                </form>
-              </Form>
+              <div className="rounded-md border">
+                <div className="p-4 bg-muted/50">
+                  <h3 className="text-lg font-medium flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Benutzeraktivitäten
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Übersicht der aktuellen Benutzeraktivitäten im System
+                  </p>
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Benutzer</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Aktuelle Aktivität</TableHead>
+                      <TableHead>Letzte Aktivität</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {userActivities.map((activity) => (
+                      <TableRow key={activity.email}>
+                        <TableCell className="font-medium">{activity.email}</TableCell>
+                        <TableCell>{renderStatusBadge(activity.status)}</TableCell>
+                        <TableCell>{activity.currentAction}</TableCell>
+                        <TableCell>{formatDate(activity.lastActive)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <div className="p-4 bg-muted/50 border-t">
+                  <p className="text-sm text-muted-foreground italic">
+                    Daten werden alle 60 Sekunden aktualisiert
+                  </p>
+                </div>
+              </div>
             </TabsContent>
           )}
         </Tabs>
