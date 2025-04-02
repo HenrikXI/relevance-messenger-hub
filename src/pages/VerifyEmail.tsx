@@ -87,6 +87,9 @@ const VerifyEmail = () => {
           <CardDescription className="text-center">
             Bitte geben Sie den Bestätigungscode ein, den wir an {pendingVerificationEmail || "Ihre E-Mail-Adresse"} gesendet haben
           </CardDescription>
+          <CardDescription className="text-center text-amber-500 font-semibold">
+            Für Testzwecke: Benutze den Code 123456
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -99,7 +102,7 @@ const VerifyEmail = () => {
                     <FormLabel>Bestätigungscode</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="XXXXXX" 
+                        placeholder="123456" 
                         {...field}
                         maxLength={6}
                         className="text-center tracking-widest text-lg"

@@ -34,7 +34,8 @@ export const useAuth = () => {
 
 // Simulierte Verifizierungscodes für Benutzer
 const generateVerificationCode = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  // Statischer Code für Testzwecke
+  return "123456";
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -79,8 +80,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [users]);
 
   const sendVerificationEmail = async (email: string) => {
-    // Generiere einen Verifikationscode
-    const code = generateVerificationCode();
+    // Fester Code "123456" für alle E-Mail-Verifikationen
+    const code = "123456";
     console.log(`Generated verification code for ${email}: ${code}`);
     setVerificationCodes(prev => ({ ...prev, [email]: code }));
     
