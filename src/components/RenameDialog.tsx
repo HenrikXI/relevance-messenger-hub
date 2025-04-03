@@ -16,7 +16,7 @@ interface RenameDialogProps {
   onRename: (newName: string) => void;
   title: string;
   currentName: string;
-  entityType: "project" | "chat";
+  entityType: "project" | "chat" | "userChat";
 }
 
 const RenameDialog: React.FC<RenameDialogProps> = ({
@@ -37,6 +37,19 @@ const RenameDialog: React.FC<RenameDialogProps> = ({
     }
   };
 
+  const getPlaceholder = () => {
+    switch(entityType) {
+      case "project":
+        return "Projektname";
+      case "chat":
+        return "Chat-Name";
+      case "userChat":
+        return "Benutzer-Name";
+      default:
+        return "Name";
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="glass-panel">
@@ -48,7 +61,7 @@ const RenameDialog: React.FC<RenameDialogProps> = ({
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={entityType === "project" ? "Projektname" : "Chat-Name"}
+              placeholder={getPlaceholder()}
               className="glass-input"
               autoFocus
             />
