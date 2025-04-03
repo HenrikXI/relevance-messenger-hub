@@ -69,21 +69,23 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
               onSearch={handleSearch} 
             />
             
-            <TabsContent value="projects" className="space-y-4 mt-3">
-              <ProjectCreationForm
-                projectInput={state.projectInput}
-                setProjectInput={setProjectInput}
-                handleCreateProject={handleCreateProject}
-              />
-            </TabsContent>
-            
-            <TabsContent value="chats" className="space-y-4 mt-3">
-              <UserChatCreationForm
-                userChatInput={state.userChatInput}
-                setUserChatInput={setUserChatInput}
-                handleCreateUserChat={handleCreateUserChat}
-              />
-            </TabsContent>
+            <Tabs value={activeTab} className="mt-3">
+              <TabsContent value="projects" className="space-y-4">
+                <ProjectCreationForm
+                  projectInput={state.projectInput}
+                  setProjectInput={setProjectInput}
+                  handleCreateProject={handleCreateProject}
+                />
+              </TabsContent>
+              
+              <TabsContent value="chats" className="space-y-4">
+                <UserChatCreationForm
+                  userChatInput={state.userChatInput}
+                  setUserChatInput={setUserChatInput}
+                  handleCreateUserChat={handleCreateUserChat}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
 
           <ScrollArea className="flex-1">
