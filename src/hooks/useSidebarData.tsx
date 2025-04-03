@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -55,7 +54,6 @@ export function useSidebarData() {
     activeTab: "projects",
   });
 
-  // Load data from localStorage
   useEffect(() => {
     try {
       const savedProjects = localStorage.getItem("projects");
@@ -122,7 +120,6 @@ export function useSidebarData() {
     }
   }, []);
 
-  // Save data to localStorage when it changes
   useEffect(() => {
     if (state.projects.length > 0) {
       localStorage.setItem("projects", JSON.stringify(state.projects));

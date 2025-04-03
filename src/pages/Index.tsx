@@ -5,20 +5,22 @@ import {
   ResizablePanel, 
   ResizableHandle 
 } from "@/components/ui/resizable";
-import ProjectSidebar from "@/components/ProjectSidebar";
+import ProjectSidebar from "@/components/project/ProjectSidebar";
 import ChatArea from "@/components/ChatArea";
 import SettingsButton from "@/components/SettingsButton";
 import SettingsModal from "@/components/SettingsModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, MessageSquare, FolderClosed } from "lucide-react";
 import { useTheme } from "next-themes";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const { user, signOut } = useAuth();
   const { theme } = useTheme();
+  const [activeTab, setActiveTab] = useState<'projects' | 'chats'>('projects');
   
   useEffect(() => {
     if (theme) {
@@ -41,6 +43,22 @@ const Index = () => {
             <h1 className="text-xl font-medium">HCS Messenger Hub</h1>
           </div>
           <div className="flex items-center gap-4">
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as 'projects' | 'chats')}
+              className="mr-4"
+            >
+              <TabsList>
+                <TabsTrigger value="projects" className="flex items-center gap-1">
+                  <FolderClosed className="h-4 w-4" />
+                  <span className="hidden sm:inline">Projekte</span>
+                </TabsTrigger>
+                <TabsTrigger value="chats" className="flex items-center gap-1">
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="hidden sm:inline">Chats</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
             <div className="text-sm text-muted-foreground">
               {user?.email} ({user?.role})
             </div>
@@ -62,12 +80,14 @@ const Index = () => {
           >
             <ProjectSidebar 
               collapsed={sidebarCollapsed} 
-              onToggleCollapse={toggleSidebar} 
+              onToggleCollapse={toggleSidebar}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
             />
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={75}>
-            <ChatArea />
+            <ChatArea activeTab={activeTab} />
           </ResizablePanel>
         </ResizablePanelGroup>
       </main>

@@ -1,8 +1,7 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FolderClosed, Users } from "lucide-react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import ProjectList from "./ProjectList";
 import ProjectDialogs from "./ProjectDialogs";
 import UserChatList from "./UserChatList";
@@ -15,14 +14,20 @@ import { useSidebarData } from "@/hooks/useSidebarData";
 interface ProjectSidebarProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
+  activeTab: 'projects' | 'chats';
+  setActiveTab: (tab: 'projects' | 'chats') => void;
 }
 
-const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleCollapse }) => {
+const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ 
+  collapsed, 
+  onToggleCollapse,
+  activeTab,
+  setActiveTab
+}) => {
   const { 
     state, 
     setProjectInput,
     setUserChatInput,
-    setActiveTab,
     setSelectedProject,
     handleCreateProject,
     handleCreateUserChat,
@@ -44,6 +49,11 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
 
   const filteredProjects = getFilteredProjects();
 
+  useEffect(() => {
+    // Update the active tab in the sidebar data
+    setActiveTab(activeTab);
+  }, [activeTab, setActiveTab]);
+
   return (
     <div className="flex flex-col h-full relative">
       <SidebarToggleButton 
@@ -59,38 +69,25 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
               onSearch={handleSearch} 
             />
             
-            <Tabs value={state.activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="projects" className="flex items-center gap-2">
-                  <FolderClosed className="h-4 w-4" />
-                  <span>Projekte</span>
-                </TabsTrigger>
-                <TabsTrigger value="chats" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  <span>User Chats</span>
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="projects" className="space-y-4 mt-3">
-                <ProjectCreationForm
-                  projectInput={state.projectInput}
-                  setProjectInput={setProjectInput}
-                  handleCreateProject={handleCreateProject}
-                />
-              </TabsContent>
-              
-              <TabsContent value="chats" className="space-y-4 mt-3">
-                <UserChatCreationForm
-                  userChatInput={state.userChatInput}
-                  setUserChatInput={setUserChatInput}
-                  handleCreateUserChat={handleCreateUserChat}
-                />
-              </TabsContent>
-            </Tabs>
+            <TabsContent value="projects" className="space-y-4 mt-3">
+              <ProjectCreationForm
+                projectInput={state.projectInput}
+                setProjectInput={setProjectInput}
+                handleCreateProject={handleCreateProject}
+              />
+            </TabsContent>
+            
+            <TabsContent value="chats" className="space-y-4 mt-3">
+              <UserChatCreationForm
+                userChatInput={state.userChatInput}
+                setUserChatInput={setUserChatInput}
+                handleCreateUserChat={handleCreateUserChat}
+              />
+            </TabsContent>
           </div>
 
           <ScrollArea className="flex-1">
-            <div className={state.activeTab === "projects" ? "block" : "hidden"}>
+            <div className={activeTab === "projects" ? "block" : "hidden"}>
               <ProjectList 
                 projects={filteredProjects}
                 expandedProjects={state.expandedProjects}
@@ -106,7 +103,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
               />
             </div>
             
-            <div className={state.activeTab === "chats" ? "block" : "hidden"}>
+            <div className={activeTab === "chats" ? "block" : "hidden"}>
               <UserChatList 
                 userChats={state.filteredUserChats}
                 onRenameUserChat={handleRenameUserChat}
