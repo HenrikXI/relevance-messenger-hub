@@ -1,17 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Search, Users, FolderClosed } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectList from "./ProjectList";
 import ProjectDialogs from "./ProjectDialogs";
+import UserChatList from "./UserChatList";
 
 interface ChatItem {
   id: string;
   title: string;
   preview: string;
   date: string;
+}
+
+interface UserChat {
+  id: string;
+  username: string;
+  avatar?: string;
+  lastMessage: string;
+  unread: number;
+  timestamp: string;
 }
 
 interface ProjectSidebarProps {
@@ -23,14 +34,18 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
   const [projects, setProjects] = useState<string[]>([]);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [projectInput, setProjectInput] = useState("");
+  const [userChatInput, setUserChatInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [chats, setChats] = useState<Record<string, ChatItem[]>>({});
+  const [userChats, setUserChats] = useState<UserChat[]>([]);
   const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-  const [itemToRename, setItemToRename] = useState<{type: 'project' | 'chat', id: string, name: string, projectId?: string}>({type: 'project', id: '', name: ''});
+  const [itemToRename, setItemToRename] = useState<{type: 'project' | 'chat' | 'userChat', id: string, name: string, projectId?: string}>({type: 'project', id: '', name: ''});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<{type: 'project' | 'chat', id: string, name: string, projectId?: string}>({type: 'project', id: '', name: ''});
+  const [itemToDelete, setItemToDelete] = useState<{type: 'project' | 'chat' | 'userChat', id: string, name: string, projectId?: string}>({type: 'project', id: '', name: ''});
   const [filteredChats, setFilteredChats] = useState<Record<string, ChatItem[]>>({});
+  const [filteredUserChats, setFilteredUserChats] = useState<UserChat[]>([]);
+  const [activeTab, setActiveTab] = useState("projects");
 
   useEffect(() => {
     try {
@@ -49,6 +64,39 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
       if (savedExpanded) {
         setExpandedProjects(JSON.parse(savedExpanded));
       }
+
+      const savedUserChats = localStorage.getItem("userChats");
+      if (savedUserChats) {
+        setUserChats(JSON.parse(savedUserChats));
+        setFilteredUserChats(JSON.parse(savedUserChats));
+      } else {
+        const sampleUserChats = [
+          {
+            id: "1",
+            username: "Max Mustermann",
+            lastMessage: "Hallo! Wie geht es dir?",
+            unread: 2,
+            timestamp: "10:45"
+          },
+          {
+            id: "2",
+            username: "Anna Schmidt",
+            lastMessage: "Wann ist das nächste Meeting?",
+            unread: 0,
+            timestamp: "Gestern"
+          },
+          {
+            id: "3",
+            username: "Thomas Weber",
+            lastMessage: "Die Dokumente sind fertig",
+            unread: 1,
+            timestamp: "Mo"
+          }
+        ];
+        setUserChats(sampleUserChats);
+        setFilteredUserChats(sampleUserChats);
+        localStorage.setItem("userChats", JSON.stringify(sampleUserChats));
+      }
     } catch (error) {
       console.error("Error loading data from localStorage:", error);
     }
@@ -66,7 +114,11 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
     if (Object.keys(expandedProjects).length > 0) {
       localStorage.setItem("expandedProjects", JSON.stringify(expandedProjects));
     }
-  }, [projects, chats, expandedProjects]);
+
+    if (userChats.length > 0) {
+      localStorage.setItem("userChats", JSON.stringify(userChats));
+    }
+  }, [projects, chats, expandedProjects, userChats]);
 
   const handleCreateProject = () => {
     if (!projectInput.trim()) return;
@@ -80,6 +132,23 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
     }
     setSelectedProject(newProject);
     setProjectInput("");
+  };
+
+  const handleCreateUserChat = () => {
+    if (!userChatInput.trim()) return;
+    
+    const newChat: UserChat = {
+      id: Date.now().toString(),
+      username: userChatInput.trim(),
+      lastMessage: "Neue Konversation gestartet",
+      unread: 0,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    
+    setUserChats(prev => [...prev, newChat]);
+    setFilteredUserChats(prev => [...prev, newChat]);
+    setUserChatInput("");
+    toast.success(`Chat mit ${newChat.username} erstellt`);
   };
 
   const handleCreateChat = (projectName: string) => {
@@ -130,6 +199,18 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
     }
   };
 
+  const handleRenameUserChat = (chatId: string) => {
+    const chat = userChats.find(c => c.id === chatId);
+    if (chat) {
+      setItemToRename({
+        type: 'userChat',
+        id: chatId,
+        name: chat.username
+      });
+      setRenameDialogOpen(true);
+    }
+  };
+
   const handleDeleteProject = (projectId: string) => {
     setItemToDelete({
       type: 'project',
@@ -147,6 +228,18 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
         id: chatId,
         name: chat.title,
         projectId
+      });
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const handleDeleteUserChat = (chatId: string) => {
+    const chat = userChats.find(c => c.id === chatId);
+    if (chat) {
+      setItemToDelete({
+        type: 'userChat',
+        id: chatId,
+        name: chat.username
       });
       setDeleteDialogOpen(true);
     }
@@ -219,6 +312,20 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
         
         toast.success(`Chat umbenannt: ${itemToRename.name} → ${newName}`);
       }
+    } else if (itemToRename.type === 'userChat') {
+      const chatId = itemToRename.id;
+      const updatedChats = userChats.map(chat => 
+        chat.id === chatId ? { ...chat, username: newName } : chat
+      );
+      
+      setUserChats(updatedChats);
+      setFilteredUserChats(updatedChats.filter(chat => 
+        !searchQuery || 
+        chat.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+      ));
+      
+      toast.success(`Chat umbenannt: ${itemToRename.name} → ${newName}`);
     }
   };
 
@@ -256,14 +363,26 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
       }));
       
       const filteredProjectChats = filteredChats[projectId] || [];
-      const updatedFilteredProjectChats = filteredProjectChats.filter(c => c.id !== chatId);
+      const updatedFilteredChats = filteredProjectChats.filter(c => c.id !== chatId);
       
       setFilteredChats(prev => ({
         ...prev,
-        [projectId]: updatedFilteredProjectChats
+        [projectId]: updatedFilteredChats
       }));
       
       toast.success(`Chat "${itemToDelete.name}" wurde gelöscht`);
+    } else if (itemToDelete.type === 'userChat') {
+      const chatId = itemToDelete.id;
+      const updatedChats = userChats.filter(chat => chat.id !== chatId);
+      
+      setUserChats(updatedChats);
+      setFilteredUserChats(updatedChats.filter(chat => 
+        !searchQuery || 
+        chat.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+      ));
+      
+      toast.success(`Chat mit "${itemToDelete.name}" wurde gelöscht`);
     }
     
     setDeleteDialogOpen(false);
@@ -274,6 +393,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
     
     if (!value.trim()) {
       setFilteredChats({...chats});
+      setFilteredUserChats([...userChats]);
       return;
     }
     
@@ -302,6 +422,13 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
     });
     
     setFilteredChats(newFilteredChats);
+    
+    const newFilteredUserChats = userChats.filter(chat => 
+      chat.username.toLowerCase().includes(query) || 
+      chat.lastMessage.toLowerCase().includes(query)
+    );
+    
+    setFilteredUserChats(newFilteredUserChats);
   };
 
   const filteredProjects = projects.filter(project => {
@@ -328,8 +455,6 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
       {!collapsed && (
         <>
           <div className="p-4 border-b">
-            <h2 className="text-lg font-medium mb-2">Projekte</h2>
-            
             <div className="mb-3 relative">
               <Input
                 placeholder="Projekte und Chats durchsuchen..."
@@ -340,36 +465,78 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ collapsed, onToggleColl
               <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             </div>
             
-            <div className="flex gap-2">
-              <Input
-                placeholder="Neues Projekt"
-                value={projectInput}
-                onChange={(e) => setProjectInput(e.target.value)}
-                className="glass-input"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreateProject();
-                }}
-              />
-              <Button onClick={handleCreateProject} size="icon">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="projects" className="flex items-center gap-2">
+                  <FolderClosed className="h-4 w-4" />
+                  <span>Projekte</span>
+                </TabsTrigger>
+                <TabsTrigger value="chats" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <span>User Chats</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="projects" className="space-y-4 mt-3">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Neues Projekt"
+                    value={projectInput}
+                    onChange={(e) => setProjectInput(e.target.value)}
+                    className="glass-input"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleCreateProject();
+                    }}
+                  />
+                  <Button onClick={handleCreateProject} size="icon">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="chats" className="space-y-4 mt-3">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Neuer User Chat"
+                    value={userChatInput}
+                    onChange={(e) => setUserChatInput(e.target.value)}
+                    className="glass-input"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleCreateUserChat();
+                    }}
+                  />
+                  <Button onClick={handleCreateUserChat} size="icon">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
 
           <ScrollArea className="flex-1">
-            <ProjectList 
-              projects={filteredProjects}
-              expandedProjects={expandedProjects}
-              selectedProject={selectedProject}
-              chats={filteredChats}
-              onSelectProject={setSelectedProject}
-              onToggleProject={toggleProjectExpansion}
-              onRenameProject={handleRenameProject}
-              onDeleteProject={handleDeleteProject}
-              onCreateChat={handleCreateChat}
-              onRenameChat={handleRenameChat}
-              onDeleteChat={handleDeleteChat}
-            />
+            <div className={activeTab === "projects" ? "block" : "hidden"}>
+              <ProjectList 
+                projects={filteredProjects}
+                expandedProjects={expandedProjects}
+                selectedProject={selectedProject}
+                chats={filteredChats}
+                onSelectProject={setSelectedProject}
+                onToggleProject={toggleProjectExpansion}
+                onRenameProject={handleRenameProject}
+                onDeleteProject={handleDeleteProject}
+                onCreateChat={handleCreateChat}
+                onRenameChat={handleRenameChat}
+                onDeleteChat={handleDeleteChat}
+              />
+            </div>
+            
+            <div className={activeTab === "chats" ? "block" : "hidden"}>
+              <UserChatList 
+                userChats={filteredUserChats}
+                onRenameUserChat={handleRenameUserChat}
+                onDeleteUserChat={handleDeleteUserChat}
+              />
+            </div>
           </ScrollArea>
           
           <ProjectDialogs
