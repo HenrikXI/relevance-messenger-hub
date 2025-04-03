@@ -16,13 +16,15 @@ interface ProjectSidebarProps {
   onToggleCollapse: () => void;
   activeTab: 'projects' | 'chats';
   setActiveTab: (tab: 'projects' | 'chats') => void;
+  onSelectChat?: (chatId: string) => void;
 }
 
 const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ 
   collapsed, 
   onToggleCollapse,
   activeTab,
-  setActiveTab
+  setActiveTab,
+  onSelectChat
 }) => {
   const { 
     state, 
@@ -110,6 +112,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                 userChats={state.filteredUserChats}
                 onRenameUserChat={handleRenameUserChat}
                 onDeleteUserChat={handleDeleteUserChat}
+                onSelectChat={onSelectChat}
               />
             </div>
           </ScrollArea>

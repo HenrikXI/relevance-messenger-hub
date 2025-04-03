@@ -2,7 +2,6 @@
 import React from "react";
 import { 
   MoreHorizontal,
-  User,
   CircleDot
 } from "lucide-react";
 import {
@@ -28,12 +27,14 @@ interface UserChatListProps {
   userChats: UserChatProps[];
   onRenameUserChat: (chatId: string) => void;
   onDeleteUserChat: (chatId: string) => void;
+  onSelectChat?: (chatId: string) => void;
 }
 
 const UserChatList: React.FC<UserChatListProps> = ({ 
   userChats, 
   onRenameUserChat,
-  onDeleteUserChat
+  onDeleteUserChat,
+  onSelectChat
 }) => {
   if (userChats.length === 0) {
     return (
@@ -60,6 +61,7 @@ const UserChatList: React.FC<UserChatListProps> = ({
           <li 
             key={chat.id}
             className="relative flex items-center gap-3 p-2 rounded-md hover:bg-accent cursor-pointer group transition-colors"
+            onClick={() => onSelectChat && onSelectChat(chat.id)}
           >
             <Avatar className="h-10 w-10 border">
               <AvatarFallback className="bg-primary/10 text-primary">
@@ -89,6 +91,7 @@ const UserChatList: React.FC<UserChatListProps> = ({
                   variant="ghost" 
                   size="icon" 
                   className="h-8 w-8 opacity-0 group-hover:opacity-100 absolute right-1 top-1/2 transform -translate-y-1/2"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>

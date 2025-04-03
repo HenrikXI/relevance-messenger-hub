@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import ChatInterface from "./ChatInterface";
 import SimpleChatInterface from "./SimpleChatInterface";
 
@@ -8,12 +8,17 @@ interface ChatAreaProps {
 }
 
 const ChatArea: React.FC<ChatAreaProps> = ({ activeTab }) => {
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+
   return (
     <div className="h-full overflow-auto">
       {activeTab === 'projects' ? (
         <ChatInterface />
       ) : (
-        <SimpleChatInterface />
+        <SimpleChatInterface 
+          selectedChatId={selectedChatId}
+          onSelectChat={(id) => setSelectedChatId(id)}
+        />
       )}
     </div>
   );

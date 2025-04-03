@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const { user, signOut } = useAuth();
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<'projects' | 'chats'>('projects');
@@ -30,6 +31,11 @@ const Index = () => {
   
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
+  };
+
+  const handleSelectChat = (chatId: string) => {
+    setSelectedChatId(chatId);
+    console.log("Selected chat:", chatId);
   };
   
   return (
@@ -83,11 +89,14 @@ const Index = () => {
               onToggleCollapse={toggleSidebar}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
+              onSelectChat={handleSelectChat}
             />
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={75}>
-            <ChatArea activeTab={activeTab} />
+            <ChatArea 
+              activeTab={activeTab} 
+            />
           </ResizablePanel>
         </ResizablePanelGroup>
       </main>
