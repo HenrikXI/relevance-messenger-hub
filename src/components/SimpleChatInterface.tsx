@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,7 +61,12 @@ interface Message {
   projectName: string;
 }
 
-const SimpleChatInterface: React.FC = () => {
+interface SimpleChatInterfaceProps {
+  selectedChatId?: string | null;
+  onSelectChat?: (id: string) => void;
+}
+
+const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatId, onSelectChat }) => {
   const [messages, setMessages] = useState<Message[]>([
     { 
       id: "welcome",
@@ -90,6 +94,7 @@ const SimpleChatInterface: React.FC = () => {
   const [renameProjectDialog, setRenameProjectDialog] = useState(false);
   const [projectToRename, setProjectToRename] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [userChats, setUserChats] = useState<any[]>([]);
 
   // Laden der Daten aus localStorage beim Start
   useEffect(() => {
@@ -126,6 +131,15 @@ const SimpleChatInterface: React.FC = () => {
         console.error("Fehler beim Laden der Kennzahlen:", error);
       }
     }
+
+    const savedUserChats = localStorage.getItem("userChats");
+    if (savedUserChats) {
+      try {
+        setUserChats(JSON.parse(savedUserChats));
+      } catch (error) {
+        console.error("Fehler beim Laden der User Chats:", error);
+      }
+    }
   }, []);
 
   // Auto-scroll to the bottom when new messages arrive
@@ -146,7 +160,11 @@ const SimpleChatInterface: React.FC = () => {
     if (Object.keys(projectMetrics).length > 0) {
       localStorage.setItem("projectMetrics", JSON.stringify(projectMetrics));
     }
-  }, [projects, messages, projectMetrics]);
+
+    if (userChats.length > 0) {
+      localStorage.setItem("userChats", JSON.stringify(userChats));
+    }
+  }, [projects, messages, projectMetrics, userChats]);
 
   // Funktion: Neues Projekt erstellen
   const handleCreateProject = () => {
@@ -423,6 +441,19 @@ const SimpleChatInterface: React.FC = () => {
       action();
     }
   };
+
+  // Effect to handle selected chat from sidebar
+  useEffect(() => {
+    if (selectedChatId) {
+      const chat = userChats.find(c => c.id === selectedChatId);
+      if (chat) {
+        toast.info(`Chat mit ${chat.username} geöffnet`);
+        // Here you would load chat messages for this user
+        // For now, we just log that a chat was selected
+        console.log("Chat selected:", chat);
+      }
+    }
+  }, [selectedChatId, userChats]);
 
   return (
     <div className="flex flex-col h-screen max-w-4xl mx-auto p-4 gap-6">

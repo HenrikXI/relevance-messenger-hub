@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   ResizablePanelGroup, 
@@ -36,6 +35,7 @@ const Index = () => {
   const handleSelectChat = (chatId: string) => {
     setSelectedChatId(chatId);
     console.log("Selected chat:", chatId);
+    setActiveTab('chats');
   };
   
   return (
