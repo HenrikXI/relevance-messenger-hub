@@ -29,11 +29,11 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
 
   return (
     <ScrollArea className={`h-full w-full ${className || ''}`}>
-      <div className="px-1 pt-1 space-y-6">
+      <div className="px-4 py-4 space-y-6">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center p-8">
             <p className="text-muted-foreground text-center">
-              Keine Nachrichten. Wählen Sie ein Projekt und beginnen Sie die Konversation.
+              Willkommen! Bitte erstellen Sie ein Projekt und geben Sie Ihre Anfrage ein.
             </p>
           </div>
         ) : (
@@ -62,34 +62,35 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
                   )}
 
                   <div
-                    className={`group flex flex-col animate-slide-up animation-delay-${
-                      index % 3
-                    }00`}
+                    className={`flex ${
+                      message.sender === 'user' ? 'justify-end' : 'justify-start'
+                    } animate-fade-in`}
                   >
-                    <div className="flex items-center gap-2 mb-1">
-                      <div
-                        className={`w-2 h-2 rounded-full ${
-                          message.sender === 'user'
-                            ? 'bg-secondary-foreground'
-                            : 'bg-primary'
-                        }`}
-                      ></div>
-                      <span className="text-xs font-medium">
-                        {message.sender === 'user' ? 'Sie' : 'Agent'}
-                      </span>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        {formatTime(message.timestamp)}
-                      </span>
-                    </div>
-
                     <div
-                      className={`rounded-lg px-4 py-3 ${
+                      className={`max-w-[80%] ${
                         message.sender === 'user'
-                          ? 'bg-secondary text-secondary-foreground mr-8'
-                          : 'bg-primary/10 text-foreground ml-8'
+                          ? 'ml-12'
+                          : 'mr-12'
                       }`}
                     >
-                      <p className="leading-relaxed text-balance">{message.text}</p>
+                      <div
+                        className={`rounded-2xl px-4 py-3 shadow-sm ${
+                          message.sender === 'user'
+                            ? 'bg-primary/95 text-primary-foreground rounded-tr-none'
+                            : 'bg-secondary/80 text-secondary-foreground dark:bg-secondary/40 rounded-tl-none'
+                        }`}
+                      >
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                          {message.text}
+                        </p>
+                      </div>
+                      <div 
+                        className={`text-[11px] px-2 mt-1 text-muted-foreground flex ${
+                          message.sender === 'user' ? 'justify-end' : 'justify-start'
+                        }`}
+                      >
+                        {formatTime(message.timestamp)}
+                      </div>
                     </div>
                   </div>
                 </div>

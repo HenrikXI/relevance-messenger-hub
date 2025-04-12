@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Loader2, SendHorizonal } from "lucide-react";
+import { FileText, Loader2, SendHorizonal, Paperclip, SmilePlus } from "lucide-react";
 import { relevanceAgent } from "../utils/relevanceAgent";
 import { exportToPDF } from "../utils/pdfExport";
 import ProjectSelector from "./ProjectSelector";
@@ -327,43 +327,64 @@ const ChatInterface: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="flex-1 flex flex-col glass-panel shadow-md">
-          <CardHeader className="pb-2">
+        <Card className="flex-1 flex flex-col glass-panel shadow-md overflow-hidden">
+          <CardHeader className="pb-2 border-b">
             <h2 className="text-lg font-medium">
               {selectedProject
                 ? `Chat: ${selectedProject.name}`
                 : "Chat"}
             </h2>
           </CardHeader>
-          <CardContent className="flex-1 pb-0 flex flex-col">
-            <div className="flex-1 mb-4 min-h-0 border rounded-md chat-background">
+          <CardContent className="flex-1 p-0 flex flex-col">
+            <div className="flex-1 min-h-0 chat-background">
               <MessageList messages={messages} />
             </div>
 
-            <div className="py-4">
-              <div className="flex gap-2">
+            <div className="p-3 border-t bg-card/95 backdrop-blur-sm">
+              <div className="flex items-center gap-2 bg-background/50 rounded-full px-3 py-1 border border-input/50">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-full h-9 w-9 hover:bg-secondary/50"
+                  title="Emoji einfügen"
+                  disabled={!selectedProject}
+                >
+                  <SmilePlus className="h-5 w-5 text-muted-foreground" />
+                </Button>
+                
                 <Input
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyDown={handleKeyPress}
                   placeholder={
                     selectedProject
-                      ? "Nachricht eingeben..."
+                      ? "Nachricht schreiben..."
                       : "Wählen Sie zuerst ein Projekt aus..."
                   }
                   disabled={!selectedProject || isSending}
-                  className="glass-input"
+                  className="border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-10"
                 />
+                
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="rounded-full h-9 w-9 hover:bg-secondary/50" 
+                  title="Datei anhängen"
+                  disabled={!selectedProject}
+                >
+                  <Paperclip className="h-5 w-5 text-muted-foreground" />
+                </Button>
+                
                 <Button
                   onClick={handleSend}
                   disabled={!inputMessage.trim() || !selectedProject || isSending}
                   size="icon"
-                  className="button-accent-blue shadow-sm shrink-0"
+                  className="rounded-full h-9 w-9 bg-primary hover:bg-primary/90"
                 >
                   {isSending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    <SendHorizonal className="h-4 w-4" />
+                    <SendHorizonal className="h-5 w-5" />
                   )}
                 </Button>
               </div>

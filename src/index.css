@@ -96,3 +96,24 @@
 .message-hover:hover {
   @apply shadow-md;
 }
+
+/* Chat bubble animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+/* WhatsApp style chat specific styles */
+.whatsapp-style-input {
+  @apply flex items-center gap-2 bg-background/50 rounded-full px-3 py-1 border border-input/50;
+}

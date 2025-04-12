@@ -24,13 +24,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FileText, Search, Plus, MessageSquare, Trash2, Copy } from "lucide-react";
+import { FileText, Search, Plus, MessageSquare, Trash2, Copy, SendHorizonal, Paperclip, SmilePlus, Loader2 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { toast } from "sonner";
 import { ContextMenuActions } from "./ContextMenuActions";
 import RenameDialog from "./RenameDialog";
 
-// Hidden Relevance Agent System: Interne Daten & Logik sind gekapselt
 const relevanceAgentSystem = (() => {
   const internalData: Record<string, string> = {
     "hallo": "Hallo, wie kann ich Ihnen helfen?",
@@ -96,7 +95,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [userChats, setUserChats] = useState<any[]>([]);
 
-  // Laden der Daten aus localStorage beim Start
   useEffect(() => {
     const savedProjects = localStorage.getItem("projects");
     if (savedProjects) {
@@ -111,7 +109,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     if (savedMessages) {
       try {
         const parsedMessages = JSON.parse(savedMessages);
-        // Konvertieren der String-Timestamps zurück in Date-Objekte
         const messagesWithDates = parsedMessages.map((msg: any) => ({
           ...msg,
           timestamp: new Date(msg.timestamp)
@@ -142,12 +139,10 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     }
   }, []);
 
-  // Auto-scroll to the bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Speichern der Daten in localStorage bei Änderungen
   useEffect(() => {
     if (projects.length > 0) {
       localStorage.setItem("projects", JSON.stringify(projects));
@@ -166,14 +161,11 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     }
   }, [projects, messages, projectMetrics, userChats]);
 
-  // Funktion: Neues Projekt erstellen
   const handleCreateProject = () => {
     if (!projectNameInput.trim()) return;
     const newProject = projectNameInput.trim();
-    // Optional: Prüfen, ob das Projekt bereits existiert
     if (!projects.includes(newProject)) {
       setProjects((prev) => [...prev, newProject]);
-      // Initialisieren der Kennzahlen für das neue Projekt
       setProjectMetrics(prev => ({
         ...prev,
         [newProject]: {}
@@ -184,24 +176,20 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     setProjectNameInput("");
   };
 
-  // Funktion: Projekt umbenennen
   const handleRenameProject = () => {
     if (projectToRename === selectedProject) return;
     if (!projectToRename.trim()) return;
     
-    // Update project name in projects array
     const updatedProjects = projects.map(project => 
       project === selectedProject ? projectToRename : project
     );
     
-    // Update project name in metrics
     const updatedMetrics = { ...projectMetrics };
     if (updatedMetrics[selectedProject]) {
       updatedMetrics[projectToRename] = updatedMetrics[selectedProject];
       delete updatedMetrics[selectedProject];
     }
     
-    // Update project name in messages
     const updatedMessages = messages.map(msg => ({
       ...msg,
       projectName: msg.projectName === selectedProject ? projectToRename : msg.projectName
@@ -212,14 +200,12 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
       projectName: msg.projectName === selectedProject ? projectToRename : msg.projectName
     }));
     
-    // Update state
     setProjects(updatedProjects);
     setProjectMetrics(updatedMetrics);
     setMessages(updatedMessages);
     setHistory(updatedHistory);
     setSelectedProject(projectToRename);
     
-    // Update localStorage
     localStorage.setItem("projects", JSON.stringify(updatedProjects));
     localStorage.setItem("projectMetrics", JSON.stringify(updatedMetrics));
     localStorage.setItem("messages", JSON.stringify(updatedMessages));
@@ -228,46 +214,37 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     setRenameProjectDialog(false);
   };
 
-  // Funktion: Projekt löschen
   const handleDeleteProject = () => {
     if (!selectedProject) return;
 
-    // Aktualisiere die Projekte-Liste
     setProjects(prev => prev.filter(project => project !== selectedProject));
     
-    // Lösche zugehörige Kennzahlen
     const newMetrics = { ...projectMetrics };
     delete newMetrics[selectedProject];
     setProjectMetrics(newMetrics);
     
-    // Lösche zugehörige Nachrichten
     const filteredMessages = messages.filter(msg => msg.projectName !== selectedProject || msg.id === "welcome");
     setMessages(filteredMessages);
     setHistory(history.filter(msg => msg.projectName !== selectedProject));
     
-    // Reset Auswahl und Dialog
     setSelectedProject("");
     setShowDeleteProjectDialog(false);
     
-    // Update localStorage after deletion
     localStorage.setItem("messages", JSON.stringify(filteredMessages));
     
     toast.success(`Projekt "${selectedProject}" wurde gelöscht`);
   };
 
-  // Funktion: Nachricht löschen mit Dialog
   const confirmDeleteMessage = (messageId: string) => {
     setShowDeleteMessageDialog(messageId);
   };
 
-  // Funktion: Nachricht kopieren
   const handleCopyMessage = (message: string) => {
     navigator.clipboard.writeText(message)
       .then(() => toast.success("Nachricht kopiert"))
       .catch(() => toast.error("Fehler beim Kopieren"));
   };
 
-  // Funktion: Nachricht löschen durchführen
   const handleDeleteMessage = () => {
     if (!showDeleteMessageDialog) return;
     
@@ -278,19 +255,16 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     setMessages(updatedMessages);
     setHistory(updatedHistory);
     
-    // Update searchResults if we're currently showing search results
     if (searchResults.length > 0) {
       setSearchResults(searchResults.filter(msg => msg.id !== messageId));
     }
     
-    // Update localStorage after deletion
     localStorage.setItem("messages", JSON.stringify(updatedMessages));
     
     setShowDeleteMessageDialog(null);
     toast.success("Nachricht wurde gelöscht");
   };
 
-  // Funktion: Chat-Nachricht senden
   const handleSend = () => {
     if (!input.trim() || !selectedProject) return;
     const currentInput = input;
@@ -310,10 +284,8 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     setHistory(updatedHistory);
     setInput("");
     
-    // Save to localStorage
     localStorage.setItem("messages", JSON.stringify(updatedMessages));
 
-    // Generiere Agentenantwort im Hintergrund
     setTimeout(() => {
       const response = relevanceAgentSystem.getResponse(currentInput);
       const responseMessage = { 
@@ -330,12 +302,10 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
       setMessages(withResponseMessages);
       setHistory(withResponseHistory);
       
-      // Save to localStorage including the agent response
       localStorage.setItem("messages", JSON.stringify(withResponseMessages));
     }, 1000);
   };
 
-  // Funktion: Chat-Verlauf als PDF exportieren
   const handleExportPDF = () => {
     if (!selectedProject) return;
     
@@ -359,13 +329,10 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
       
       const projectMessages = messages.filter(m => m.projectName === selectedProject);
       projectMessages.forEach((msg) => {
-        // Formatierte Zeit hinzufügen
-        const timeStr = msg.timestamp.toLocaleTimeString('de-DE', {
+        doc.text(`[${msg.timestamp.toLocaleTimeString('de-DE', {
           hour: '2-digit',
           minute: '2-digit'
-        });
-        
-        doc.text(`[${timeStr}] ${msg.sender === "user" ? "User:" : "Agent:"} ${msg.text}`, 10, y);
+        })}] ${msg.sender === "user" ? "User:" : "Agent:"} ${msg.text}`, 10, y);
         y += 10;
       });
       
@@ -379,7 +346,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     }
   };
 
-  // Funktion: Verlaufssuche
   const handleSearch = () => {
     if (!searchQuery.trim() && !searchByProject) {
       setSearchResults([]);
@@ -388,12 +354,10 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     
     let results = [...history];
     
-    // Nach Projekt filtern, wenn ausgewählt
     if (searchByProject) {
       results = results.filter(msg => msg.projectName === searchByProject);
     }
     
-    // Nach Suchbegriff filtern
     if (searchQuery.trim()) {
       results = results.filter(msg =>
         msg.text.toLowerCase().includes(searchQuery.toLowerCase())
@@ -409,7 +373,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     }
   };
 
-  // Funktion: Kennzahl hinzufügen
   const handleAddMetric = () => {
     if (!metricKey.trim() || !metricValue.trim() || !selectedProject) return;
     
@@ -427,14 +390,12 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     toast.success(`Kennzahl hinzugefügt: ${metricKey}`);
   };
 
-  // Funktion: Suche zurücksetzen
   const resetSearch = () => {
     setSearchResults([]);
     setSearchQuery("");
     setSearchByProject("");
   };
 
-  // Handle key press for inputs
   const handleKeyPress = (e: React.KeyboardEvent, action: () => void) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -442,14 +403,11 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     }
   };
 
-  // Effect to handle selected chat from sidebar
   useEffect(() => {
     if (selectedChatId) {
       const chat = userChats.find(c => c.id === selectedChatId);
       if (chat) {
         toast.info(`Chat mit ${chat.username} geöffnet`);
-        // Here you would load chat messages for this user
-        // For now, we just log that a chat was selected
         console.log("Chat selected:", chat);
       }
     }
@@ -461,7 +419,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
         <h2 className="text-xl font-medium mb-4">Projektmanagement</h2>
         
         <div className="space-y-4">
-          {/* Projekt erstellen - mit hervorgehobenem Button */}
           <div>
             <label className="block text-sm font-medium mb-1">Neues Projekt erstellen:</label>
             <div className="flex gap-2">
@@ -482,7 +439,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
             </div>
           </div>
 
-          {/* Projekt auswählen */}
           {projects.length > 0 && (
             <div>
               <label className="block text-sm font-medium mb-1">Projekt auswählen:</label>
@@ -530,7 +486,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
             </div>
           )}
 
-          {/* Dialog zum Umbenennen eines Projekts */}
           <Dialog open={renameProjectDialog} onOpenChange={setRenameProjectDialog}>
             <DialogContent className="glass-panel">
               <DialogHeader>
@@ -555,7 +510,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
             </DialogContent>
           </Dialog>
 
-          {/* Projekt löschen Dialog */}
           <Dialog open={showDeleteProjectDialog} onOpenChange={setShowDeleteProjectDialog}>
             <DialogContent className="glass-panel">
               <DialogHeader>
@@ -577,7 +531,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
             </DialogContent>
           </Dialog>
 
-          {/* Nachricht löschen Dialog */}
           <Dialog open={!!showDeleteMessageDialog} onOpenChange={(open) => !open && setShowDeleteMessageDialog(null)}>
             <DialogContent className="glass-panel">
               <DialogHeader>
@@ -598,7 +551,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
             </DialogContent>
           </Dialog>
 
-          {/* Kennzahlen - mit hervorgehobenem Button */}
           <div>
             <h3 className="text-lg font-medium mb-2">Projektkennzahlen</h3>
             <div className="flex flex-col gap-2">
@@ -627,7 +579,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
               </Button>
             </div>
             
-            {/* Display metrics with subtle background */}
             {selectedProject && projectMetrics[selectedProject] && Object.keys(projectMetrics[selectedProject]).length > 0 && (
               <div className="mt-4 space-y-2">
                 <h4 className="text-sm font-medium">Gespeicherte Kennzahlen:</h4>
@@ -645,7 +596,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
         </div>
       </Card>
 
-      {/* Search - mit besseren visuellen Kontrasten */}
       <Card className="p-4 glass-panel shadow-md">
         <h3 className="text-lg font-medium mb-2">Verlaufssuche</h3>
         
@@ -773,7 +723,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
         )}
       </Card>
 
-      {/* Chat - mit subtiler Hintergrundfarbe */}
       <Card className="flex-1 flex flex-col glass-panel shadow-md overflow-hidden">
         <div className="p-4 pb-2 border-b">
           <h2 className="text-xl font-medium">
@@ -781,59 +730,101 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
           </h2>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 chat-background">
+        <div className="flex-1 overflow-y-auto chat-background">
           {messages
             .filter(msg => !selectedProject || msg.projectName === selectedProject || msg.id === "welcome")
-            .map((msg, index) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <ContextMenuActions
-                  className={`group relative max-w-[80%]`}
-                  isMessage={true}
-                  onCopy={() => handleCopyMessage(msg.text)}
-                  onDelete={() => msg.id !== "welcome" && confirmDeleteMessage(msg.id)}
-                >
-                  <div
-                    className={`p-3 rounded-lg shadow-sm ${
-                      msg.sender === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border-[0.5px] border-border/50 text-card-foreground"
-                    }`}
-                  >
-                    {msg.text}
-                    <div className="text-xs opacity-60 mt-1">
-                      {msg.timestamp.toLocaleTimeString('de-DE', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+            .length === 0 ? (
+            <div className="h-full flex items-center justify-center p-8">
+              <p className="text-muted-foreground text-center">
+                Willkommen! Bitte erstellen Sie ein Projekt und geben Sie Ihre Anfrage ein.
+              </p>
+            </div>
+          ) : (
+            <div className="p-4 space-y-6">
+              {messages
+                .filter(msg => !selectedProject || msg.projectName === selectedProject || msg.id === "welcome")
+                .map((msg, index) => {
+                  const isUser = msg.sender === "user";
+                  
+                  return (
+                    <div 
+                      key={msg.id} 
+                      className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}
+                    >
+                      <ContextMenuActions
+                        className={`max-w-[80%] ${isUser ? "ml-12" : "mr-12"}`}
+                        isMessage={true}
+                        onCopy={() => handleCopyMessage(msg.text)}
+                        onDelete={() => msg.id !== "welcome" && confirmDeleteMessage(msg.id)}
+                      >
+                        <div
+                          className={`rounded-2xl px-4 py-3 shadow-sm ${
+                            isUser
+                              ? "bg-primary/95 text-primary-foreground rounded-tr-none"
+                              : "bg-secondary/80 text-secondary-foreground dark:bg-secondary/40 rounded-tl-none"
+                          }`}
+                        >
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                            {msg.text}
+                          </p>
+                        </div>
+                        <div 
+                          className={`text-[11px] px-2 mt-1 text-muted-foreground flex ${
+                            isUser ? "justify-end" : "justify-start"
+                          }`}
+                        >
+                          {msg.timestamp.toLocaleTimeString('de-DE', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </ContextMenuActions>
                     </div>
-                  </div>
-                </ContextMenuActions>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
+                  );
+                })}
+                <div ref={messagesEndRef} />
+            </div>
+          )}
         </div>
 
-        {/* Input area */}
-        <div className="p-4 border-t">
-          <div className="flex gap-2">
+        <div className="p-3 border-t bg-card/95 backdrop-blur-sm">
+          <div className="flex items-center gap-2 bg-background/50 rounded-full px-3 py-1 border border-input/50">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full h-9 w-9 hover:bg-secondary/50"
+              title="Emoji einfügen"
+              disabled={!selectedProject}
+            >
+              <SmilePlus className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={selectedProject ? "Ihre Anfrage eingeben..." : "Bitte wählen Sie ein Projekt aus..."}
+              placeholder={selectedProject ? "Nachricht schreiben..." : "Bitte wählen Sie ein Projekt aus..."}
               disabled={!selectedProject}
               onKeyDown={(e) => handleKeyPress(e, handleSend)}
-              className="glass-input"
+              className="border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-10"
             />
+            
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full h-9 w-9 hover:bg-secondary/50" 
+              title="Datei anhängen"
+              disabled={!selectedProject}
+            >
+              <Paperclip className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            
             <Button 
               onClick={handleSend} 
               disabled={!selectedProject || !input.trim()}
-              className="button-accent-blue shadow-sm"
+              className="rounded-full h-9 w-9 bg-primary hover:bg-primary/90"
+              size="icon"
             >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Senden
+              <SendHorizonal className="h-5 w-5" />
             </Button>
           </div>
           
