@@ -25,7 +25,7 @@ interface ProjectManagementProps {
   selectedProject: string;
   setSelectedProject: (project: string) => void;
   projectMetrics: Record<string, Record<string, string>>;
-  setProjectMetrics: (metrics: Record<string, Record<string, string>>) => void;
+  setProjectMetrics: React.Dispatch<React.SetStateAction<Record<string, Record<string, string>>>>;
   setMessages: (messages: any[]) => void;
   setHistory: (history: any[]) => void;
   messages: any[];
@@ -318,3 +318,4 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
 };
 
 export default ProjectManagement;
+
