@@ -10,6 +10,27 @@ export interface User {
 export interface Project {
   id: string;
   name: string;
+  status?: string;
+  deadline?: Date;
+  tasks?: Task[];
+  comments?: Comment[];
+  description?: string;
+}
+
+// Task-Typ
+export interface Task {
+  id: string;
+  name: string;
+  completed: boolean;
+  projectId: string;
+}
+
+// Kommentar-Typ
+export interface Comment {
+  id: string;
+  text: string;
+  author: string;
+  timestamp: Date;
 }
 
 // Kennzahlentypen
@@ -25,7 +46,7 @@ export interface Metric {
 export interface Message {
   id: string;
   text: string;
-  sender: "user" | "agent";
+  sender: "user" | "agent" | "system";
   timestamp: Date;
   projectName: string;
 }
@@ -36,5 +57,5 @@ export interface SearchResult {
   messageText: string;
   projectName: string;
   timestamp: Date;
-  sender: "user" | "agent";
+  sender: "user" | "agent" | "system";
 }

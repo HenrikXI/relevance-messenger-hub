@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import ProjectManagement from "./chat/ProjectManagement";
 import SearchHistory from "./chat/SearchHistory";
 import ChatMessages from "./chat/ChatMessages";
 import DeleteMessageDialog from "./chat/DeleteMessageDialog";
+import { Message } from "../types";
 
 // Agent for generating responses
 const relevanceAgentSystem = (() => {
@@ -27,14 +29,6 @@ const relevanceAgentSystem = (() => {
 
   return { getResponse };
 })();
-
-interface Message {
-  id: string;
-  sender: "user" | "agent";
-  text: string;
-  timestamp: Date;
-  projectName: string;
-}
 
 interface SimpleChatInterfaceProps {
   selectedChatId?: string | null;
