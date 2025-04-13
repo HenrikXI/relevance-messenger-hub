@@ -2,6 +2,7 @@
 import React from "react";
 import { MessageSquare } from "lucide-react";
 import { ContextMenuActions } from "@/components/ContextMenuActions";
+import { toast } from "sonner";
 
 interface ChatItemData {
   id: string;
@@ -23,11 +24,6 @@ const ChatItem: React.FC<ChatItemProps> = ({
   onRename,
   onDelete
 }) => {
-  // Make sure we handle the chat properly
-  const handleClick = () => {
-    console.log(`Chat clicked: ${chat.title}`);
-  };
-
   return (
     <ContextMenuActions
       key={chat.id}
@@ -35,7 +31,6 @@ const ChatItem: React.FC<ChatItemProps> = ({
       isChat={true}
       onRename={() => onRename(chat.id, projectId)}
       onDelete={() => onDelete(chat.id, projectId)}
-      onClick={handleClick}
     >
       <div className="flex-1 flex items-center gap-2">
         <MessageSquare className="h-3 w-3 text-muted-foreground" />
