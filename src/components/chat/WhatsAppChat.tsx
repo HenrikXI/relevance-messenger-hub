@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { SmilePlus, Paperclip, SendHorizonal, Check } from "lucide-react";
 import { toast } from "sonner";
-import ChatHeader from "./ChatHeader";
-import MessageList from "./MessageList";
-import ChatInput from "./ChatInput";
-import EmptyChat from "./EmptyChat";
 
 interface ChatMessage {
   id: string;
@@ -22,7 +22,9 @@ interface WhatsAppChatProps {
 
 const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedChatId, className }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
   const [currentChat, setCurrentChat] = useState<{id: string, name: string} | null>(null);
+  const endOfMessagesRef = useRef<HTMLDivElement>(null);
   
   // Load messages when chat changes
   useEffect(() => {
@@ -55,10 +57,6 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedChatId, className }
                 read: true
               }]);
             }
-          } else {
-            // Chat wurde nicht gefunden oder gelöscht
-            setMessages([]);
-            setCurrentChat(null);
           }
         } catch (error) {
           console.error("Error loading chat data:", error);
@@ -71,20 +69,19 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedChatId, className }
     }
   }, [selectedChatId]);
 
-  // Format timestamp for display
-  const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString('de-DE', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (endOfMessagesRef.current) {
+      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
-  const handleSendMessage = (text: string) => {
-    if (!selectedChatId || !currentChat) return;
+  const handleSendMessage = () => {
+    if (!input.trim() || !selectedChatId || !currentChat) return;
     
     const newMessage: ChatMessage = {
       id: `msg_${Date.now()}`,
-      text: text,
+      text: input.trim(),
       sender: "user", // In a real app, this would be the current user's ID
       timestamp: new Date(),
       read: false
@@ -92,24 +89,13 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedChatId, className }
     
     const updatedMessages = [...messages, newMessage];
     setMessages(updatedMessages);
+    setInput("");
     
     // Save to localStorage
     localStorage.setItem(`chat_${selectedChatId}_messages`, JSON.stringify(updatedMessages));
     
     // Simulate response (in a real app, this would come from the server)
     setTimeout(() => {
-      // Überprüfen, ob der Chat immer noch existiert und ausgewählt ist
-      const currentSavedChats = localStorage.getItem("userChats");
-      if (currentSavedChats) {
-        const currentChats = JSON.parse(currentSavedChats);
-        const chatStillExists = currentChats.some((c: any) => c.id === selectedChatId);
-        
-        if (!chatStillExists || selectedChatId !== currentChat.id) {
-          // Chat wurde gelöscht oder ein anderer Chat wurde ausgewählt
-          return;
-        }
-      }
-      
       const responseMessage: ChatMessage = {
         id: `msg_${Date.now() + 1}`,
         text: `Dies ist eine automatische Antwort von ${currentChat.name}`,
@@ -126,29 +112,172 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedChatId, className }
     }, 1000);
   };
 
+  // Format timestamp for display
+  const formatTime = (date: Date): string => {
+    return date.toLocaleTimeString('de-DE', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   return (
     <div className={`flex flex-col h-full ${className || ''}`}>
       {/* Chat header */}
-      <ChatHeader currentChat={currentChat} />
+      {currentChat ? (
+        <div className="p-4 border-b flex items-center justify-between bg-card/50 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="font-medium text-primary">
+                {currentChat.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+              </span>
+            </div>
+            <div>
+              <h3 className="font-medium">{currentChat.name}</h3>
+              <p className="text-xs text-muted-foreground">Online</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="p-4 border-b">
+          <h3 className="font-medium">Chat</h3>
+        </div>
+      )}
       
       {/* Messages area */}
       <ScrollArea className="flex-1 chat-background">
-        {(!selectedChatId || !currentChat) ? (
-          <EmptyChat 
-            selectedChatId={selectedChatId} 
-            currentChat={currentChat} 
-          />
+        {!selectedChatId ? (
+          <div className="h-full flex items-center justify-center p-8">
+            <p className="text-muted-foreground text-center">
+              Bitte wählen Sie einen Chat aus der Liste aus.
+            </p>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="h-full flex items-center justify-center p-8">
+            <p className="text-muted-foreground text-center">
+              Keine Nachrichten vorhanden. Starten Sie die Unterhaltung!
+            </p>
+          </div>
         ) : (
-          <MessageList 
-            messages={messages} 
-            formatTime={formatTime} 
-          />
+          <div className="px-4 py-4 space-y-6">
+            {messages.map((message, index) => {
+              // Display date if it's the first message or if the date has changed
+              const showDate =
+                index === 0 ||
+                message.timestamp.toDateString() !==
+                  messages[index - 1].timestamp.toDateString();
+
+              return (
+                <div key={message.id} className="space-y-2">
+                  {showDate && (
+                    <div className="relative py-2">
+                      <Separator className="absolute inset-0 my-auto" />
+                      <span className="relative bg-background px-2 text-xs text-muted-foreground mx-auto w-auto flex justify-center">
+                        {message.timestamp.toLocaleDateString('de-DE', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </span>
+                    </div>
+                  )}
+
+                  <div
+                    className={`flex ${
+                      message.sender === 'user' ? 'justify-end' : 'justify-start'
+                    } animate-fade-in`}
+                  >
+                    <div
+                      className={`max-w-[80%] ${
+                        message.sender === 'user'
+                          ? 'ml-12'
+                          : 'mr-12'
+                      }`}
+                    >
+                      <div
+                        className={`rounded-2xl px-4 py-3 shadow-sm ${
+                          message.sender === 'user'
+                            ? 'bg-primary/95 text-primary-foreground rounded-tr-none'
+                            : message.sender === 'system'
+                              ? 'bg-secondary/40 text-secondary-foreground text-center rounded-lg'
+                              : 'bg-secondary/80 text-secondary-foreground dark:bg-secondary/40 rounded-tl-none'
+                        }`}
+                      >
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                          {message.text}
+                        </p>
+                      </div>
+                      <div 
+                        className={`text-[11px] px-2 mt-1 text-muted-foreground flex ${
+                          message.sender === 'user' ? 'justify-end' : 'justify-start'
+                        }`}
+                      >
+                        {formatTime(message.timestamp)}
+                        {message.sender === 'user' && (
+                          <span className="ml-1 flex items-center">
+                            <Check className="h-3 w-3 ml-0.5" />
+                            {message.read && <Check className="h-3 w-3 -ml-1.5" />}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={endOfMessagesRef} />
+          </div>
         )}
       </ScrollArea>
       
-      {/* Input area - only show if we have a valid chat */}
-      {selectedChatId && currentChat && (
-        <ChatInput onSendMessage={handleSendMessage} />
+      {/* Input area */}
+      {selectedChatId && (
+        <div className="p-3 border-t bg-card/95 backdrop-blur-sm">
+          <div className="whatsapp-style-input">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full h-9 w-9 hover:bg-secondary/50"
+              title="Emoji einfügen"
+            >
+              <SmilePlus className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Nachricht schreiben..."
+              onKeyDown={handleKeyPress}
+              className="border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-0 h-10 py-2.5 resize-none"
+              rows={1}
+            />
+            
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full h-9 w-9 hover:bg-secondary/50" 
+              title="Datei anhängen"
+            >
+              <Paperclip className="h-5 w-5 text-muted-foreground" />
+            </Button>
+            
+            <Button 
+              onClick={handleSendMessage} 
+              disabled={!input.trim()}
+              className="rounded-full h-9 w-9 bg-primary hover:bg-primary/90"
+              size="icon"
+            >
+              <SendHorizonal className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
