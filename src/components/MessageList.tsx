@@ -81,7 +81,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
                         }`}
                       >
                         <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                          {typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
+                          {message.text}
                         </p>
                       </div>
                       <div 
