@@ -7,17 +7,22 @@ export interface User {
 
 // Projekttypen
 export interface Project {
+  id: string;
   name: string;
 }
 
 // Kennzahlentypen
 export interface Metric {
+  id: string;
   key: string;
   value: string;
+  projectId: string;
+  color?: string;
 }
 
 // Nachrichten
 export interface Message {
+  id?: string;
   text: string;
   sender: "user" | "agent";
   timestamp: Date;
@@ -26,6 +31,7 @@ export interface Message {
 
 // Suchergebnisse
 export interface SearchResult {
+  messageId: string;
   messageText: string;
   projectName: string;
   timestamp: Date;

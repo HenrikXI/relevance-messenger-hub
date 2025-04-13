@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import ProjectManagement from "./chat/ProjectManagement";
 import SearchHistory from "./chat/SearchHistory";
 import ChatMessages from "./chat/ChatMessages";
 import DeleteMessageDialog from "./chat/DeleteMessageDialog";
+import { Message } from "../types";
 
 // Agent for generating responses
 const relevanceAgentSystem = (() => {
@@ -28,13 +30,6 @@ const relevanceAgentSystem = (() => {
   return { getResponse };
 })();
 
-interface Message {
-  sender: "user" | "agent";
-  text: string;
-  timestamp: Date;
-  projectName: string;
-}
-
 interface SimpleChatInterfaceProps {
   selectedChatId?: string | null;
   onSelectChat?: (id: string) => void;
@@ -44,6 +39,7 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
   // State management
   const [messages, setMessages] = useState<Message[]>([
     { 
+      id: "welcome",
       sender: "agent", 
       text: "Willkommen! Bitte erstellen Sie ein Projekt und geben Sie Ihre Anfrage ein.",
       timestamp: new Date(),
@@ -56,6 +52,7 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
   const [history, setHistory] = useState<Message[]>([]);
   const [userChats, setUserChats] = useState<any[]>([]);
   const [showDeleteMessageDialog, setShowDeleteMessageDialog] = useState<string | null>(null);
+  const [projectMetrics, setProjectMetrics] = useState<any[]>([]);
 
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -127,6 +124,7 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     const currentInput = input;
     
     const newMessage = { 
+      id: `msg_${Date.now()}`,
       sender: "user" as const, 
       text: currentInput,
       timestamp: new Date(),
@@ -145,6 +143,7 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     setTimeout(() => {
       const response = relevanceAgentSystem.getResponse(currentInput);
       const responseMessage = { 
+        id: `msg_${Date.now() + 1}`,
         sender: "agent" as const, 
         text: response,
         timestamp: new Date(),
@@ -182,15 +181,25 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     toast.success("Nachricht wurde gelöscht");
   };
 
+  // Copy a message handler
+  const handleCopyMessage = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => toast.success("Text in die Zwischenablage kopiert"))
+      .catch(() => toast.error("Fehler beim Kopieren"));
+  };
+
   return (
     <div className="flex flex-col h-screen max-w-4xl mx-auto p-4 gap-6">
       <ProjectManagement 
         projects={projects}
         selectedProject={selectedProject}
+        setSelectedProject={setSelectedProject}
         messages={messages}
         setMessages={setMessages}
         history={history}
         setHistory={setHistory}
+        projectMetrics={projectMetrics}
+        setProjectMetrics={setProjectMetrics}
       />
 
       <SearchHistory 
@@ -205,6 +214,7 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
         input={input}
         setInput={setInput}
         handleSend={handleSend}
+        onCopyMessage={handleCopyMessage}
         onDeleteMessage={confirmDeleteMessage}
       />
 
