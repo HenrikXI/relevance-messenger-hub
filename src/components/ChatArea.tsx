@@ -1,20 +1,24 @@
 
 import React, { useState } from "react";
 import ChatInterface from "./ChatInterface";
-import WhatsAppChat from "./chat/WhatsAppChat";
+import SimpleChatInterface from "./SimpleChatInterface";
 
 interface ChatAreaProps {
   activeTab: 'projects' | 'chats';
-  selectedChatId?: string | null;
 }
 
-const ChatArea: React.FC<ChatAreaProps> = ({ activeTab, selectedChatId }) => {
+const ChatArea: React.FC<ChatAreaProps> = ({ activeTab }) => {
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+
   return (
     <div className="h-full overflow-auto">
       {activeTab === 'projects' ? (
         <ChatInterface />
       ) : (
-        <WhatsAppChat selectedChatId={selectedChatId} />
+        <SimpleChatInterface 
+          selectedChatId={selectedChatId}
+          onSelectChat={(id) => setSelectedChatId(id)}
+        />
       )}
     </div>
   );

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   ResizablePanelGroup, 
@@ -38,13 +37,6 @@ const Index = () => {
     console.log("Selected chat:", chatId);
     setActiveTab('chats');
   };
-
-  // When switching to projects tab, clear selected chat
-  useEffect(() => {
-    if (activeTab === 'projects') {
-      setSelectedChatId(null);
-    }
-  }, [activeTab]);
   
   return (
     <div className="h-screen w-full flex flex-col bg-background">
@@ -103,8 +95,7 @@ const Index = () => {
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={75}>
             <ChatArea 
-              activeTab={activeTab}
-              selectedChatId={selectedChatId}
+              activeTab={activeTab} 
             />
           </ResizablePanel>
         </ResizablePanelGroup>
