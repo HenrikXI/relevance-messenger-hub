@@ -1,4 +1,5 @@
 
+
 // Benutzertypen
 export interface User {
   email: string;
@@ -22,7 +23,7 @@ export interface Metric {
 
 // Nachrichten
 export interface Message {
-  id?: string;
+  id: string;  // Changed from optional to required
   text: string;
   sender: "user" | "agent";
   timestamp: Date;
@@ -37,3 +38,4 @@ export interface SearchResult {
   timestamp: Date;
   sender: "user" | "agent";
 }
+

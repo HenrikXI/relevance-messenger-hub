@@ -52,7 +52,8 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
   const [history, setHistory] = useState<Message[]>([]);
   const [userChats, setUserChats] = useState<any[]>([]);
   const [showDeleteMessageDialog, setShowDeleteMessageDialog] = useState<string | null>(null);
-  const [projectMetrics, setProjectMetrics] = useState<any[]>([]);
+  // Fix the projectMetrics type to match what ProjectManagement expects
+  const [projectMetrics, setProjectMetrics] = useState<Record<string, Record<string, string>>>({});
 
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -73,7 +74,9 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
           ...msg,
           timestamp: new Date(msg.timestamp),
           // Ensure text is always a string
-          text: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
+          text: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text),
+          // Ensure id is always present
+          id: msg.id || `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         }));
         setMessages(messagesWithDates);
         setHistory(messagesWithDates);
@@ -88,6 +91,16 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
         setUserChats(JSON.parse(savedUserChats));
       } catch (error) {
         console.error("Fehler beim Laden der User Chats:", error);
+      }
+    }
+
+    // Load project metrics from localStorage
+    const savedProjectMetrics = localStorage.getItem("projectMetrics");
+    if (savedProjectMetrics) {
+      try {
+        setProjectMetrics(JSON.parse(savedProjectMetrics));
+      } catch (error) {
+        console.error("Fehler beim Laden der Projektkennzahlen:", error);
       }
     }
   }, []);
@@ -105,7 +118,12 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     if (userChats.length > 0) {
       localStorage.setItem("userChats", JSON.stringify(userChats));
     }
-  }, [projects, messages, userChats]);
+
+    // Save projectMetrics to localStorage
+    if (Object.keys(projectMetrics).length > 0) {
+      localStorage.setItem("projectMetrics", JSON.stringify(projectMetrics));
+    }
+  }, [projects, messages, userChats, projectMetrics]);
 
   // Handle selected chat
   useEffect(() => {
@@ -123,7 +141,7 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     if (!input.trim() || !selectedProject) return;
     const currentInput = input;
     
-    const newMessage = { 
+    const newMessage: Message = { 
       id: `msg_${Date.now()}`,
       sender: "user" as const, 
       text: currentInput,
@@ -142,7 +160,7 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
 
     setTimeout(() => {
       const response = relevanceAgentSystem.getResponse(currentInput);
-      const responseMessage = { 
+      const responseMessage: Message = { 
         id: `msg_${Date.now() + 1}`,
         sender: "agent" as const, 
         text: response,
