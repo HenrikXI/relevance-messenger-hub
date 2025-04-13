@@ -2,6 +2,7 @@
 import React from "react";
 import { MessageSquare } from "lucide-react";
 import { ContextMenuActions } from "@/components/ContextMenuActions";
+import { toast } from "sonner";
 
 interface ChatItemData {
   id: string;

@@ -1,7 +1,7 @@
 
 import React from "react";
 import ChatInterface from "./ChatInterface";
-import SimpleChatInterface from "./SimpleChatInterface";
+import WhatsAppChat from "./chat/WhatsAppChat";
 
 interface ChatAreaProps {
   activeTab: 'projects' | 'chats';
@@ -19,9 +19,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       {activeTab === 'projects' ? (
         <ChatInterface />
       ) : (
-        <SimpleChatInterface 
+        <WhatsAppChat 
           selectedChatId={selectedChatId} 
-          onSelectChat={onSelectChat}
         />
       )}
     </div>
