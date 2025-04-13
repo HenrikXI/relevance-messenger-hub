@@ -57,6 +57,11 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedChatId, className }
                 read: true
               }]);
             }
+          } else {
+            // Chat wurde nicht gefunden oder gelöscht
+            setMessages([]);
+            setCurrentChat(null);
+            setInput("");
           }
         } catch (error) {
           console.error("Error loading chat data:", error);
@@ -66,6 +71,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedChatId, className }
     } else {
       setMessages([]);
       setCurrentChat(null);
+      setInput("");
     }
   }, [selectedChatId]);
 
@@ -96,6 +102,18 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedChatId, className }
     
     // Simulate response (in a real app, this would come from the server)
     setTimeout(() => {
+      // Überprüfen, ob der Chat immer noch existiert und ausgewählt ist
+      const currentSavedChats = localStorage.getItem("userChats");
+      if (currentSavedChats) {
+        const currentChats = JSON.parse(currentSavedChats);
+        const chatStillExists = currentChats.some((c: any) => c.id === selectedChatId);
+        
+        if (!chatStillExists || selectedChatId !== currentChat.id) {
+          // Chat wurde gelöscht oder ein anderer Chat wurde ausgewählt
+          return;
+        }
+      }
+      
       const responseMessage: ChatMessage = {
         id: `msg_${Date.now() + 1}`,
         text: `Dies ist eine automatische Antwort von ${currentChat.name}`,
@@ -156,6 +174,12 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedChatId, className }
           <div className="h-full flex items-center justify-center p-8">
             <p className="text-muted-foreground text-center">
               Bitte wählen Sie einen Chat aus der Liste aus.
+            </p>
+          </div>
+        ) : !currentChat ? (
+          <div className="h-full flex items-center justify-center p-8">
+            <p className="text-muted-foreground text-center">
+              Der ausgewählte Chat existiert nicht mehr oder wurde gelöscht.
             </p>
           </div>
         ) : messages.length === 0 ? (
@@ -238,7 +262,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedChatId, className }
       </ScrollArea>
       
       {/* Input area */}
-      {selectedChatId && (
+      {selectedChatId && currentChat && (
         <div className="p-3 border-t bg-card/95 backdrop-blur-sm">
           <div className="whatsapp-style-input">
             <Button 

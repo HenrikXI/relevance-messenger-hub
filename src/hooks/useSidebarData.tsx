@@ -33,6 +33,7 @@ export interface SidebarDataState {
   filteredChats: Record<string, ChatItem[]>;
   filteredUserChats: UserChat[];
   activeTab: string;
+  selectedChatId: string | null;
 }
 
 export function useSidebarData() {
@@ -52,6 +53,7 @@ export function useSidebarData() {
     filteredChats: {},
     filteredUserChats: [],
     activeTab: "projects",
+    selectedChatId: null
   });
 
   useEffect(() => {
@@ -480,6 +482,9 @@ export function useSidebarData() {
       const chatId = state.itemToDelete.id;
       const updatedChats = state.userChats.filter(chat => chat.id !== chatId);
       
+      // Sicherstellen, dass der selectedChatId zurückgesetzt wird, wenn der aktuelle Chat gelöscht wird
+      const isSelectedChat = state.selectedChatId === chatId;
+      
       setState(prev => ({
         ...prev,
         userChats: updatedChats,
@@ -488,8 +493,12 @@ export function useSidebarData() {
           chat.username.toLowerCase().includes(prev.searchQuery.toLowerCase()) ||
           chat.lastMessage.toLowerCase().includes(prev.searchQuery.toLowerCase())
         ),
-        deleteDialogOpen: false
+        deleteDialogOpen: false,
+        selectedChatId: isSelectedChat ? null : prev.selectedChatId
       }));
+      
+      // Nachrichten für diesen Chat aus dem localStorage entfernen
+      localStorage.removeItem(`chat_${chatId}_messages`);
       
       toast.success(`Chat mit "${state.itemToDelete.name}" wurde gelöscht`);
     }
@@ -554,6 +563,11 @@ export function useSidebarData() {
       return !!state.filteredChats[project]?.length;
     });
   };
+  
+  // Neuer Setter für selectedChatId
+  const setSelectedChatId = (id: string | null) => {
+    setState(prev => ({ ...prev, selectedChatId: id }));
+  };
 
   return {
     state,
@@ -562,6 +576,7 @@ export function useSidebarData() {
     setSearchQuery,
     setActiveTab,
     setSelectedProject,
+    setSelectedChatId,
     handleCreateProject,
     handleCreateUserChat,
     handleCreateChat,

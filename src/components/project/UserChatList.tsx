@@ -28,13 +28,15 @@ interface UserChatListProps {
   onRenameUserChat: (chatId: string) => void;
   onDeleteUserChat: (chatId: string) => void;
   onSelectChat?: (chatId: string) => void;
+  selectedChatId?: string | null;
 }
 
 const UserChatList: React.FC<UserChatListProps> = ({ 
   userChats, 
   onRenameUserChat,
   onDeleteUserChat,
-  onSelectChat
+  onSelectChat,
+  selectedChatId
 }) => {
   if (userChats.length === 0) {
     return (
@@ -60,7 +62,9 @@ const UserChatList: React.FC<UserChatListProps> = ({
         {userChats.map(chat => (
           <li 
             key={chat.id}
-            className="relative flex items-center gap-3 p-2 rounded-md hover:bg-accent cursor-pointer group transition-colors"
+            className={`relative flex items-center gap-3 p-2 rounded-md hover:bg-accent cursor-pointer group transition-colors ${
+              selectedChatId === chat.id ? 'bg-accent/60' : ''
+            }`}
             onClick={() => onSelectChat && onSelectChat(chat.id)}
           >
             <Avatar className="h-10 w-10 border">
@@ -97,13 +101,21 @@ const UserChatList: React.FC<UserChatListProps> = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="start" className="w-48">
-                <DropdownMenuItem onClick={() => onRenameUserChat(chat.id)}>
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRenameUserChat(chat.id);
+                  }}
+                >
                   Umbenennen
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   className="text-destructive focus:text-destructive" 
-                  onClick={() => onDeleteUserChat(chat.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteUserChat(chat.id);
+                  }}
                 >
                   Löschen
                 </DropdownMenuItem>
