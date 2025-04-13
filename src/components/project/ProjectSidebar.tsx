@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -23,7 +22,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   collapsed, 
   onToggleCollapse,
   activeTab,
-  setActiveTab,
+  setActiveTab: setActiveTabProp,
   onSelectChat
 }) => {
   const { 
@@ -46,7 +45,8 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
     performRename,
     performDelete,
     handleSearch,
-    getFilteredProjects
+    getFilteredProjects,
+    setActiveTab
   } = useSidebarData();
 
   const filteredProjects = getFilteredProjects();
@@ -54,7 +54,8 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   useEffect(() => {
     // Update the active tab in the sidebar data
     setActiveTab(activeTab);
-  }, [activeTab, setActiveTab]);
+    setActiveTabProp(activeTab);
+  }, [activeTab, setActiveTab, setActiveTabProp]);
 
   return (
     <div className="flex flex-col h-full relative">
@@ -113,6 +114,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                 onRenameUserChat={handleRenameUserChat}
                 onDeleteUserChat={handleDeleteUserChat}
                 onSelectChat={onSelectChat}
+                selectedChatId={state.selectedChatId}
               />
             </div>
           </ScrollArea>
