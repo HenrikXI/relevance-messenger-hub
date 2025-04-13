@@ -15,9 +15,9 @@ import "./App.css";
 
 function App() {
   return (
-    <AuthProvider>
-      <ProjectProvider>
-        <Router>
+    <Router>
+      <AuthProvider>
+        <ProjectProvider>
           <Routes>
             <Route path="/" element={<Navigate to="/projects" replace />} />
             <Route path="/dashboard" element={<Index />} />
@@ -34,9 +34,9 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
-        </Router>
-      </ProjectProvider>
-    </AuthProvider>
+        </ProjectProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
