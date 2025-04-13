@@ -58,7 +58,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
           />
           <ChatList 
             projectName={project}
-            chats={chats[project] || []}
+            chats={Array.isArray(chats[project]) ? chats[project] : []}
             onCreateChat={onCreateChat}
             onRenameChat={onRenameChat}
             onDeleteChat={onDeleteChat}

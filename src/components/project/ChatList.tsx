@@ -40,7 +40,7 @@ const ChatList: React.FC<ChatListProps> = ({
           Neuer Chat
         </Button>
         
-        {chats?.map((chat) => (
+        {Array.isArray(chats) && chats.map((chat) => (
           <ChatItem
             key={chat.id}
             chat={chat}
