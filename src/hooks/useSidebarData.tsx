@@ -144,7 +144,7 @@ export function useSidebarData() {
         updates = userChatManagement.performUserChatDelete(state.itemToDelete.id);
       }
       
-      updateState(updates);
+      updateState({...updates, ...resetDialogState(state)});
     } catch (error) {
       console.error("Error deleting item:", error);
       toast.error("Fehler beim Löschen");

@@ -13,12 +13,11 @@ export const updateSidebarState = <K extends keyof SidebarDataState>(
 };
 
 // Utility for resetting dialogs
-export const resetDialogState = (state: SidebarDataState) => {
+export const resetDialogState = (state: SidebarDataState): Partial<SidebarDataState> => {
   return {
-    ...state,
     renameDialogOpen: false,
     deleteDialogOpen: false,
-    itemToRename: { type: 'project', id: '', name: '' },
-    itemToDelete: { type: 'project', id: '', name: '' }
+    itemToRename: { type: 'project' as const, id: '', name: '' },
+    itemToDelete: { type: 'project' as const, id: '', name: '' }
   };
 };
