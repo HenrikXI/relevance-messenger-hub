@@ -55,6 +55,9 @@ export function useSidebarData() {
     ...projectActions,
     ...userChatActions,
     ...dialogActions,
-    ...searchActions
+    ...searchActions,
+    setActiveTab: (activeTab: string) => {
+      setState(prev => ({ ...prev, activeTab }));
+    }
   };
 }

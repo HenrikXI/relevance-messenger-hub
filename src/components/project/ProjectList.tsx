@@ -40,31 +40,37 @@ const ProjectList: React.FC<ProjectListProps> = ({
 }) => {
   return (
     <div className="p-3 space-y-4">
-      {projects.map((project) => (
-        <Collapsible 
-          key={project} 
-          open={expandedProjects[project]} 
-          onOpenChange={() => onToggleProject(project)}
-        >
-          <ProjectItem
-            project={project}
-            expanded={expandedProjects[project]}
-            isSelected={selectedProject === project}
-            onSelect={onSelectProject}
-            onToggleExpand={onToggleProject}
-            onRename={onRenameProject}
-            onDelete={onDeleteProject}
-            onCreateChat={onCreateChat}
-          />
-          <ChatList 
-            projectName={project}
-            chats={chats[project] || []}
-            onCreateChat={onCreateChat}
-            onRenameChat={onRenameChat}
-            onDeleteChat={onDeleteChat}
-          />
-        </Collapsible>
-      ))}
+      {projects.length > 0 ? (
+        projects.map((project) => (
+          <Collapsible 
+            key={project} 
+            open={expandedProjects[project]} 
+            onOpenChange={() => onToggleProject(project)}
+          >
+            <ProjectItem
+              project={project}
+              expanded={expandedProjects[project]}
+              isSelected={selectedProject === project}
+              onSelect={onSelectProject}
+              onToggleExpand={onToggleProject}
+              onRename={onRenameProject}
+              onDelete={onDeleteProject}
+              onCreateChat={onCreateChat}
+            />
+            <ChatList 
+              projectName={project}
+              chats={chats[project] || []}
+              onCreateChat={onCreateChat}
+              onRenameChat={onRenameChat}
+              onDeleteChat={onDeleteChat}
+            />
+          </Collapsible>
+        ))
+      ) : (
+        <div className="p-4 text-sm text-muted-foreground text-center">
+          Keine Projekte vorhanden
+        </div>
+      )}
     </div>
   );
 };
