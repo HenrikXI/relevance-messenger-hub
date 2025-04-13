@@ -46,7 +46,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
                   new Date(messages[index - 1].timestamp).toDateString();
 
               return (
-                <div key={message.id || `msg_${index}`} className="space-y-2">
+                <div key={message.id} className="space-y-2">
                   {showDate && (
                     <div className="relative py-2">
                       <Separator className="absolute inset-0 my-auto" />
@@ -81,7 +81,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
                         }`}
                       >
                         <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                          {typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
+                          {message.text}
                         </p>
                       </div>
                       <div 

@@ -1,7 +1,7 @@
 
-
 // Benutzertypen
 export interface User {
+  id: string;
   email: string;
   role: "user" | "admin";
 }
@@ -18,12 +18,12 @@ export interface Metric {
   key: string;
   value: string;
   projectId: string;
-  color?: string;
+  color?: string; // Farbattribut für die Kategorisierung
 }
 
 // Nachrichten
 export interface Message {
-  id: string;  // Changed from optional to required
+  id: string;
   text: string;
   sender: "user" | "agent";
   timestamp: Date;
@@ -38,4 +38,3 @@ export interface SearchResult {
   timestamp: Date;
   sender: "user" | "agent";
 }
-
