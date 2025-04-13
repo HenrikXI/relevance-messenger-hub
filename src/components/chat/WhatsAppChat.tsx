@@ -46,7 +46,9 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedChatId, className }
               // Convert string dates to Date objects
               setMessages(parsedMessages.map((msg: any) => ({
                 ...msg,
-                timestamp: new Date(msg.timestamp)
+                timestamp: new Date(msg.timestamp),
+                // Ensure text is always a string
+                text: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
               })));
             } else {
               setMessages([{
@@ -235,7 +237,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({ selectedChatId, className }
                         }`}
                       >
                         <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                          {message.text}
+                          {typeof message.text === 'string' ? message.text : JSON.stringify(message.text)}
                         </p>
                       </div>
                       <div 

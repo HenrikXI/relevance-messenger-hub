@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import ProjectManagement from "./chat/ProjectManagement";
@@ -77,7 +78,9 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
         const parsedMessages = JSON.parse(savedMessages);
         const messagesWithDates = parsedMessages.map((msg: any) => ({
           ...msg,
-          timestamp: new Date(msg.timestamp)
+          timestamp: new Date(msg.timestamp),
+          // Ensure text is always a string
+          text: typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
         }));
         setMessages(messagesWithDates);
         setHistory(messagesWithDates);
