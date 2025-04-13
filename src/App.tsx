@@ -25,23 +25,11 @@ function App() {
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             
-            {/* Project routes */}
-            <Route 
-              path="/projects" 
-              element={
-                <ProtectedRoute>
-                  <ProjectsPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/projects/:projectId" 
-              element={
-                <ProtectedRoute>
-                  <ProjectDetailPage />
-                </ProtectedRoute>
-              } 
-            />
+            {/* Protected routes using the ProtectedRoute wrapper */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/projects" element={<ProjectsPage />} />
+              <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
+            </Route>
             
             <Route path="*" element={<NotFound />} />
           </Routes>
