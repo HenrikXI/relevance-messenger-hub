@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import ProjectManagement from "./chat/ProjectManagement";
@@ -30,7 +29,6 @@ const relevanceAgentSystem = (() => {
 })();
 
 interface Message {
-  id: string;
   sender: "user" | "agent";
   text: string;
   timestamp: Date;
@@ -46,7 +44,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
   // State management
   const [messages, setMessages] = useState<Message[]>([
     { 
-      id: "welcome",
       sender: "agent", 
       text: "Willkommen! Bitte erstellen Sie ein Projekt und geben Sie Ihre Anfrage ein.",
       timestamp: new Date(),
@@ -56,7 +53,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
   const [input, setInput] = useState("");
   const [projects, setProjects] = useState<string[]>([]);
   const [selectedProject, setSelectedProject] = useState("");
-  const [projectMetrics, setProjectMetrics] = useState<Record<string, Record<string, string>>>({});
   const [history, setHistory] = useState<Message[]>([]);
   const [userChats, setUserChats] = useState<any[]>([]);
   const [showDeleteMessageDialog, setShowDeleteMessageDialog] = useState<string | null>(null);
@@ -89,15 +85,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
       }
     }
 
-    const savedMetrics = localStorage.getItem("projectMetrics");
-    if (savedMetrics) {
-      try {
-        setProjectMetrics(JSON.parse(savedMetrics));
-      } catch (error) {
-        console.error("Fehler beim Laden der Kennzahlen:", error);
-      }
-    }
-
     const savedUserChats = localStorage.getItem("userChats");
     if (savedUserChats) {
       try {
@@ -117,15 +104,11 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     if (messages.length > 0) {
       localStorage.setItem("messages", JSON.stringify(messages));
     }
-    
-    if (Object.keys(projectMetrics).length > 0) {
-      localStorage.setItem("projectMetrics", JSON.stringify(projectMetrics));
-    }
 
     if (userChats.length > 0) {
       localStorage.setItem("userChats", JSON.stringify(userChats));
     }
-  }, [projects, messages, projectMetrics, userChats]);
+  }, [projects, messages, userChats]);
 
   // Handle selected chat
   useEffect(() => {
@@ -144,7 +127,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     const currentInput = input;
     
     const newMessage = { 
-      id: `user_${Date.now()}`,
       sender: "user" as const, 
       text: currentInput,
       timestamp: new Date(),
@@ -163,7 +145,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
     setTimeout(() => {
       const response = relevanceAgentSystem.getResponse(currentInput);
       const responseMessage = { 
-        id: `agent_${Date.now()}`,
         sender: "agent" as const, 
         text: response,
         timestamp: new Date(),
@@ -178,13 +159,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
       
       localStorage.setItem("messages", JSON.stringify(withResponseMessages));
     }, 1000);
-  };
-
-  // Copy message handler
-  const handleCopyMessage = (message: string) => {
-    navigator.clipboard.writeText(message)
-      .then(() => toast.success("Nachricht kopiert"))
-      .catch(() => toast.error("Fehler beim Kopieren"));
   };
 
   // Delete message handlers
@@ -213,9 +187,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
       <ProjectManagement 
         projects={projects}
         selectedProject={selectedProject}
-        setSelectedProject={setSelectedProject}
-        projectMetrics={projectMetrics}
-        setProjectMetrics={setProjectMetrics}
         messages={messages}
         setMessages={setMessages}
         history={history}
@@ -234,7 +205,6 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ selectedChatI
         input={input}
         setInput={setInput}
         handleSend={handleSend}
-        onCopyMessage={handleCopyMessage}
         onDeleteMessage={confirmDeleteMessage}
       />
 
